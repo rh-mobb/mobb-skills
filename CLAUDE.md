@@ -1,4 +1,4 @@
-# AGENTS.md
+# CLAUDE.md
 
 Claude Code plugins repository for the MOBB team. Plugins live under `plugins/`.
 

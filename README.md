@@ -52,6 +52,6 @@ Add to your project's `.claude/settings.json`:
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for plugin development guidelines.
+See [AGENTS.md](AGENTS.md) for plugin development guidelines.
 
 Before opening a PR, run `make lint` locally.
