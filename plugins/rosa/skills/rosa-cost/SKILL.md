@@ -103,17 +103,39 @@ Detect the input mode from what the user provides.
 
 ### Live Mode — Cluster IDs
 
-Requires an active OCM login. Run `ocm whoami` first to confirm. If it fails, instruct the user:
+Requires an active OCM login. Before running any `ocm` command:
 
-```bash
-ocm login --token=<token>  # get token at https://console.redhat.com/openshift/token
-```
+1. **Resolve the profile.** If the user specifies a profile name (e.g., "use my `ocm-rh` profile"), set `OCM_CONFIG` to the platform-specific path:
 
-For each cluster ID:
+   ```bash
+   # macOS
+   export OCM_CONFIG="$HOME/Library/Application Support/ocm/<profile-name>.json"
 
-```bash
-ocm list machinepool --cluster <CLUSTER_ID>
-```
+   # Linux
+   export OCM_CONFIG="$HOME/.config/ocm/<profile-name>.json"
+   ```
+
+   If no profile is specified, check whether `OCM_CONFIG` is already set; otherwise the default profile is used.
+
+2. **Confirm login:**
+
+   ```bash
+   ocm whoami
+   ```
+
+   If it fails, instruct the user:
+
+   ```bash
+   ocm login --token=<token>  # get token at https://console.redhat.com/openshift/token
+   # To log into a named profile without overwriting the default:
+   OCM_CONFIG="$HOME/Library/Application Support/ocm/<profile-name>.json" ocm login --token=<token>
+   ```
+
+3. **Pull machine pool data** for each cluster ID:
+
+   ```bash
+   ocm list machinepool --cluster <CLUSTER_ID>
+   ```
 
 Map instance type family to profile:
 - `m*`, `t*`, `a*` → General Purpose

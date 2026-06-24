@@ -22,20 +22,57 @@ It shows:
 
 ## Implementation
 
-Run the following and present the output to the user in a readable summary:
+**Step 1: Resolve the active profile**
+
+If the user specifies a profile name (e.g., "use my `ocm-rh` profile"), resolve it to a file path before running any `ocm` command:
 
 ```bash
-# Show active config file
-echo "Config: ${OCM_CONFIG:-default (~/.config/ocm/ocm.json on Linux, ~/Library/Application Support/ocm/ocm.json on macOS)}"
+# Detect OS
+uname   # Darwin = macOS, Linux = Linux
 
-# Current user details
-ocm whoami
+# macOS config directory
+OCM_DIR="$HOME/Library/Application Support/ocm"
 
-# API endpoint
-ocm config get url
+# Linux config directory
+OCM_DIR="$HOME/.config/ocm"
+
+# Build full path for the named profile
+export OCM_CONFIG="$OCM_DIR/<profile-name>.json"
 ```
 
-If `ocm whoami` returns an error about missing credentials, tell the user to run:
+If the user does not specify a profile, check whether `OCM_CONFIG` is already set. If it is not set, the `ocm` CLI uses the default profile (`ocm.json` in the platform config directory).
+
+**Step 2: List available profiles (if needed)**
+
+If the user is unsure which profile to use, list the available config files:
+
+```bash
+# macOS
+ls "$HOME/Library/Application Support/ocm/"
+
+# Linux
+ls "$HOME/.config/ocm/"
+```
+
+Each `.json` file is a profile. The file stem (e.g., `ocm-rh`) is the profile name.
+
+**Step 3: Confirm the active account**
+
+```bash
+ocm whoami        # current user, org, and account ID
+ocm config get url  # confirm API endpoint (production vs staging)
+```
+
+Present the output as a concise summary: username, organization, API URL, and the resolved `OCM_CONFIG` path.
+
+**If `ocm whoami` fails with a credentials error:**
+
 ```bash
 ocm login --token=<token>  # get token at https://console.redhat.com/openshift/token
+```
+
+To log in to a named profile without overwriting the default:
+
+```bash
+OCM_CONFIG="$OCM_DIR/<profile-name>.json" ocm login --token=<token>
 ```
