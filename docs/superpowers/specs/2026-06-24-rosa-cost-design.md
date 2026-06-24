@@ -103,7 +103,19 @@ Total monthly = EC2 cost + ROSA cost
 
 Fleet total = sum of all per-cluster totals.
 
-For HCP comparison using the same worker vCPU counts as Classic: HCP eliminates Classic control-plane EC2 nodes from the customer bill (they run on shared Red Hat infrastructure). The skill notes this qualitative benefit but does not attempt to quantify the control plane node count since Classic control plane sizes vary and are not exposed via OCM.
+For HCP comparison using the same worker vCPU counts as Classic: HCP eliminates Classic control-plane and infra EC2 nodes from the customer bill (they run on shared Red Hat infrastructure). The skill quantifies this saving using the known ROSA Classic defaults:
+
+| Node role | Count | Default instance | vCPUs | Profile |
+|---|---|---|---|---|
+| Control plane | 3 (always) | m5.2xlarge | 8 | General Purpose |
+| Infra (single-AZ) | 2 | r5.xlarge | 4 | Memory Optimized |
+| Infra (multi-AZ) | 3 | r5.xlarge | 4 | Memory Optimized |
+
+The skill asks whether the cluster is single-AZ or multi-AZ (or infers it from OCM data in Live mode) to use the correct infra count. These instance sizes are ROSA defaults; users may override them if their cluster uses non-default sizes.
+
+Approximate EC2 savings per cluster per month (PAYGO, us-east-1):
+- Single-AZ: ~$1,211/cluster/month
+- Multi-AZ: ~$1,395/cluster/month
 
 ### 4. Output Templates
 
@@ -184,7 +196,7 @@ Standard opportunities surfaced:
 
 - Currency: USD only
 - Region: us-east-1 assumed; rates do not vary per-region within this skill
-- Control plane nodes: excluded from cost calculations (ROSA-managed); HCP qualitative benefit noted but not quantified
+- Control plane and infra nodes: excluded from Classic worker cost calculations (they are ROSA-managed overhead), but their EC2 cost IS included in the Classic→HCP savings calculation using known ROSA defaults (m5.2xlarge × 3 control plane, r5.xlarge × 2–3 infra). Users may override instance sizes if their cluster uses non-defaults.
 - vCPU counts for Live mode come from `ocm list machinepool` replica counts — not live node metrics
 - Discount multipliers are approximations; users with custom EDP or private pricing should override with explicit percentages
 - The skill does not make API calls to AWS Pricing API — it uses the embedded rate table
