@@ -22,6 +22,8 @@ Accepts the same inputs as `/rosa:cost-estimate`, plus:
 
 ## Implementation
 
+0. **Customer setup**: Follow the customer setup process from the rosa-cost skill. Ask for the customer name, check for an existing `reports/<customer-name>/index.md`, and propose the default output path `reports/<customer-name>/YYYY-MM-DD-cost-optimize.md`.
+
 1. Collect fleet data and contract terms the same way as `/rosa:cost-estimate`.
 
 2. Calculate the current baseline cost using the formula in the rosa-cost skill.
@@ -106,7 +108,11 @@ For opportunities where a specific savings amount is not quantifiable (e.g., rig
 | **Annual savings** | | **$X (~Y%)** |
 ```
 
-6. Follow with a 3–5 sentence narrative:
+6. Write the full output to the confirmed report path using the report file header format from the rosa-cost skill, followed by the recommendations table, Optimized TCO Table, and narrative.
+
+7. Create or update `reports/<customer-name>/index.md` with any fleet profile data collected and append a row to the Generated Reports table (date, "Cost Optimization", filename).
+
+8. Follow with a 3–5 sentence narrative:
    - Total current fleet spend (monthly and annual)
    - Largest cost driver
    - Top recommendation with estimated annual savings

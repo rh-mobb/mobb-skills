@@ -20,6 +20,13 @@ Use this command when you are not sure which focused command applies. Power user
 
 ## Implementation
 
+**Step 0: Customer setup**
+
+Follow the customer setup process from the rosa-cost skill:
+1. Ask: "What's the customer name?" (use a slug-friendly form, e.g., `acme-corp`)
+2. Check whether `reports/<customer-name>/index.md` exists. If it does, read it and pre-populate known fleet data — skip re-asking for data already recorded.
+3. Propose the default output path: `reports/<customer-name>/YYYY-MM-DD-cost-analysis.md`. Accept an alternative path if the user provides one.
+
 **Step 1: Determine customer context**
 
 Ask:
@@ -63,3 +70,9 @@ For **new HCP customers**:
 2. Show ranked optimization opportunities: contract terms, ARM Graviton, Karpenter, Spot.
 
 All output follows the templates defined in the rosa-cost skill.
+
+**After producing output:**
+
+Write the full analysis to the confirmed report path using the report file header format from the rosa-cost skill, followed by all tables and narrative generated above.
+
+Create or update `reports/<customer-name>/index.md` with any new fleet profile data collected and append a row to the Generated Reports table (date, "Cost Analysis", filename).

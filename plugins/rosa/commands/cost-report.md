@@ -24,6 +24,8 @@ Accepts the same inputs as `/rosa:cost-estimate`, plus:
 
 ## Implementation
 
+**Customer setup**: Follow the customer setup process from the rosa-cost skill. Ask for the customer name, check for an existing `reports/<customer-name>/index.md`, and propose the default output path `reports/<customer-name>/YYYY-MM-DD-cost-report.md`.
+
 Collect all required fleet data before generating the report. Ask conversationally for any missing inputs:
 - Fleet details: cluster count, worker pools per cluster, instance types, replica counts per pool
 - Contract terms: ROSA fee term (PAYGO / 1yr / 3yr) and EC2 reserved term (on-demand / 1yr / 3yr)
@@ -231,3 +233,11 @@ Four concrete actions to initiate Phase 1A:
 
 4. **Migration playbook review and approval with the customer's platform team**
    Schedule a working session with the customer's platform engineering and SRE teams to walk through the Phase 1A runbook: rollback criteria, cutover window, parallel-run duration, and decommission checklist. Confirm on-call coverage for the first production cutover (Phase 1C) before Phase 1A begins.
+
+---
+
+**After generating the report:**
+
+Write all eight sections to the confirmed report path using the report file header format from the rosa-cost skill.
+
+Create or update `reports/<customer-name>/index.md` with the complete fleet profile data collected and append a row to the Generated Reports table (date, "Strategic Advisory Report", filename).

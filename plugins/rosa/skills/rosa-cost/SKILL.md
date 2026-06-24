@@ -315,6 +315,82 @@ Per-node costs at 1-year contract terms, 4 vCPUs (m7i.xlarge / m7g.xlarge):
 Classic cluster overhead (multi-AZ, 1yr reserved EC2+EBS for CP+infra): **$975.25/cluster/month** = **$11,703/cluster/year**
 HCP cluster fee: **$182.50/cluster/month** = **$2,190/cluster/year**
 
+## File Output Conventions
+
+All commands write their output to the `reports/` directory. Collect the customer name at the start of every command and use it to determine the output path.
+
+### Directory structure
+
+```
+reports/
+└── <customer-name>/
+    ├── index.md                          # Customer profile and report history
+    ├── YYYY-MM-DD-cost-estimate.md
+    ├── YYYY-MM-DD-cost-compare.md
+    ├── YYYY-MM-DD-cost-optimize.md
+    └── YYYY-MM-DD-cost-report.md
+```
+
+### Customer setup — start of every command
+
+1. Ask: "What's the customer name?" (use a slug-friendly form, e.g., `acme-corp`)
+2. Check whether `reports/<customer-name>/index.md` exists.
+   - If it exists: read it and pre-populate known fleet data, contract terms, and preferences — skip re-asking for data already recorded.
+   - If it does not exist: collect all required data normally; create the index when done.
+3. Propose the default output path and confirm: `reports/<customer-name>/YYYY-MM-DD-<report-name>.md`. Accept an alternative path if the user provides one.
+
+### Report file header
+
+Begin every report file with:
+
+```markdown
+# ROSA <Report Type> — <Customer Name>
+
+**Date:** YYYY-MM-DD
+**Command:** /rosa:<command-name>
+**Rates:** current as of 2026-06 — verify at https://aws.amazon.com/rosa/pricing/ before quoting
+
+---
+```
+
+Follow with the full command output.
+
+### index.md format
+
+```markdown
+# <Customer Name> — ROSA Cost Analysis
+
+**Last updated:** YYYY-MM-DD
+
+## Fleet Profile
+
+- **Cluster count:** N
+- **Architecture:** Classic / HCP / Mixed
+- **AZ topology:** Single-AZ / Multi-AZ
+- **Total worker vCPUs:** X
+- **ROSA contract term:** PAYGO / 1yr / 3yr
+- **EC2 reserved term:** On-demand / 1yr / 3yr
+- **Region:** us-east-1
+
+## Cluster Details
+
+| Cluster ID or Name | Type | Worker pools | Total vCPUs | Instance profile |
+|---|---|---|---|---|
+
+## Pricing Overrides
+
+- `rh_discount:` X% _(omit if not set)_
+- `ec2_discount:` X% _(omit if not set)_
+
+## Generated Reports
+
+| Date | Report | File |
+|---|---|---|
+| YYYY-MM-DD | Cost Estimate | YYYY-MM-DD-cost-estimate.md |
+```
+
+After every command run: refresh Fleet Profile with any new data collected and append a row to the Generated Reports table.
+
 ## Constraints and Assumptions
 
 - Region: us-east-1. ROSA worker node fees are uniform across AWS standard Regions. EC2 rates may vary but this skill uses us-east-1 as the baseline.

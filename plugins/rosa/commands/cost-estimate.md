@@ -29,6 +29,8 @@ Optional overrides (provide inline with your request):
 
 ## Implementation
 
+0. **Customer setup**: Follow the customer setup process from the rosa-cost skill. Ask for the customer name, check for an existing `reports/<customer-name>/index.md`, and propose the default output path `reports/<customer-name>/YYYY-MM-DD-cost-estimate.md`.
+
 1. Identify the input mode from what the user provides. If the user provides no fleet data, ask which mode they prefer.
 
 2. Collect missing information conversationally:
@@ -45,6 +47,10 @@ Optional overrides (provide inline with your request):
 6. Follow with the narrative (total fleet spend, largest cost driver, top recommendation, implementation complexity).
 
 Use the Simple Cost Table format and Narrative format defined in the rosa-cost skill.
+
+7. Write the full output to the confirmed report path using the report file header format from the rosa-cost skill, followed by the cost table and narrative.
+
+8. Create or update `reports/<customer-name>/index.md` with any fleet profile data collected and append a row to the Generated Reports table (date, "Cost Estimate", filename).
 
 For a Classic vs HCP side-by-side comparison, use `/rosa:cost-compare`.
 For ranked optimization opportunities, use `/rosa:cost-optimize`.

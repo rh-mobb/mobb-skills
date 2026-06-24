@@ -20,6 +20,8 @@ Accepts the same inputs as `/rosa:cost-estimate`: live OCM cluster IDs, detailed
 
 ## Implementation
 
+0. **Customer setup**: Follow the customer setup process from the rosa-cost skill. Ask for the customer name, check for an existing `reports/<customer-name>/index.md`, and propose the default output path `reports/<customer-name>/YYYY-MM-DD-cost-compare.md`.
+
 1. Collect fleet data using the same input resolution as `/rosa:cost-estimate`.
    - If the user provides no fleet data, ask which mode they prefer (Live, Detailed, or Estimate).
    - Confirm `ocm whoami` if using Live mode.
@@ -39,3 +41,7 @@ Accepts the same inputs as `/rosa:cost-estimate`: live OCM cluster IDs, detailed
 6. For ranked cost optimization opportunities beyond Classic→HCP migration, direct users to `/rosa:cost-optimize`.
 
 7. For a full strategic advisory report with a phased migration plan, direct users to `/rosa:cost-report`.
+
+8. Write the full output to the confirmed report path using the report file header format from the rosa-cost skill, followed by the cost table, narrative, and HCP Qualitative Benefits table.
+
+9. Create or update `reports/<customer-name>/index.md` with any fleet profile data collected and append a row to the Generated Reports table (date, "Cost Comparison", filename).
