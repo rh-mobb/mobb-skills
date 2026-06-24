@@ -1,0 +1,16 @@
+{
+  "name": "mobb-skills",
+  "owner": {
+    "name": "rh-mobb"
+  },
+  "plugins": [
+    {
+      "name": "ocm",
+      "source": "./plugins/ocm",
+      "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
+      "version": "0.1.0",
+      "category": "openshift",
+      "keywords": ["ocm", "openshift", "rosa", "aro", "osd", "clusters"]
+    }
+  ]
+}
