@@ -133,30 +133,36 @@ Requires an active OCM login. Before running any `ocm` command:
 
 3. **Detect cluster type and pull pool data** for each cluster ID.
 
-   First, determine whether the cluster is Classic or HCP:
+   Use JSON throughout — `ocm describe cluster` supports `--json`; pool listing uses the raw API which always returns JSON. If a command fails or returns unexpected output, investigate with `--help` and the raw API before retrying, then update the ocm-cli skill with the correct approach.
+
+   Detect cluster type and get the internal OCM ID (required for raw API calls):
 
    ```bash
-   CLUSTER_INFO=$(ocm describe cluster "$CLUSTER_ID")
-   IS_HCP=$(echo "$CLUSTER_INFO" | grep "^HCP:" | awk '{print $2}')
-   INTERNAL_ID=$(echo "$CLUSTER_INFO" | grep "^ID:" | awk '{print $2}')
+   CLUSTER_JSON=$(ocm describe cluster "$CLUSTER_ID" --json)
+   INTERNAL_ID=$(echo "$CLUSTER_JSON" | jq -r '.id')
+   IS_HCP=$(echo "$CLUSTER_JSON" | jq -r '.hypershift.enabled // false')
    ```
 
-   **Classic** (`HCP:` line absent or not `true`) — use machine pools:
+   **Classic** (`IS_HCP == false`) — use the machine_pools API:
 
    ```bash
-   ocm list machinepool --cluster <CLUSTER_ID>
+   ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools | \
+     jq -r '.items[] | [.id, .instance_type,
+       (if .autoscaling then "\(.autoscaling.min_replicas)-\(.autoscaling.max_replicas)"
+        else (.replicas | tostring) end)] | @tsv'
    ```
 
-   **HCP** (`HCP: true`) — use node pools via the raw API with the internal OCM ID:
+   **HCP** (`IS_HCP == true`) — use the node_pools API:
 
    ```bash
    ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
      jq -r '.items[] | [.id, .aws_node_pool.instance_type,
-       (.replicas // "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"),
+       (if .autoscaling then "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"
+        else (.replicas | tostring) end),
        .availability_zone] | @tsv'
    ```
 
-   HCP node pools labeled `node-role.kubernetes.io/infra` are managed infra nodes — exclude them from worker vCPU counts; they carry no ROSA worker node fee and no customer EC2 cost.
+   All customer-provisioned node pools in HCP incur the ROSA worker node fee regardless of their Kubernetes label (including pools labeled `node-role.kubernetes.io/infra`). In Classic, infra nodes are RH-managed and free; in HCP, that overhead moves into Red Hat's account — every node pool the customer provisions is billed as a worker node.
 
 Map instance type family to profile:
 - `m*`, `t*`, `a*` → General Purpose

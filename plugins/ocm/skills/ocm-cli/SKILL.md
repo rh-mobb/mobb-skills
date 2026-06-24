@@ -104,50 +104,71 @@ ocm hibernate cluster <NAME|ID>
 ocm resume cluster <NAME|ID>
 ```
 
+## Self-Improvement Principle
+
+When an OCM command fails or produces unexpected output, **stop and investigate before retrying**:
+
+1. Check the command's help: `ocm <command> --help`
+2. Test alternative forms (flags, subcommands, raw API paths)
+3. Update this skill with the correct approach
+4. Then proceed with the corrected command
+
+Do not guess at flags or retry with minor variations. The fix belongs in the skill so future sessions start with the right command.
+
 ## Classic vs HCP Detection
 
-Before running pool-related commands, determine whether a cluster is Classic or HCP:
+Always use JSON output for cluster describe — it is machine-parseable and avoids fragile text grep:
 
 ```bash
-ocm describe cluster <NAME|ID> | grep -E "^ID:|^HCP:"
-# Output:
-#   ID:    2llu9e1irqiimfkq2o6d8e6bqiqr540f   ← internal OCM ID (needed for raw API calls)
-#   HCP:   true                                ← present and true on HCP clusters
+# Get internal OCM ID and HCP flag in one call
+ocm describe cluster <NAME|EXTERNAL_UUID> --json | jq '{id: .id, hcp: .hypershift.enabled, name: .name}'
 ```
 
-- If `HCP: true` → use **NodePool** commands (see below)
-- If `HCP:` line is absent or false → use **MachinePool** commands
-
-To detect programmatically and retrieve the internal ID in one step:
+The `id` field is the **internal OCM ID** — required for all raw API calls below. The external UUID (from telemetry or the console) is what you pass to `ocm describe`; the internal ID is what you pass to the API.
 
 ```bash
-CLUSTER_INFO=$(ocm describe cluster "$EXTERNAL_ID")
-IS_HCP=$(echo "$CLUSTER_INFO" | grep "^HCP:" | awk '{print $2}')
-INTERNAL_ID=$(echo "$CLUSTER_INFO" | grep "^ID:" | awk '{print $2}')
+CLUSTER_JSON=$(ocm describe cluster "$EXTERNAL_UUID" --json)
+INTERNAL_ID=$(echo "$CLUSTER_JSON" | jq -r '.id')
+IS_HCP=$(echo "$CLUSTER_JSON" | jq -r '.hypershift.enabled // false')
 ```
+
+- If `IS_HCP == true` → use **NodePool** API (see below)
+- Otherwise → use **MachinePool** API
 
 ## Resource Management
 
 All resource subcommands take `--cluster <NAME|ID>`:
 
 ```bash
-# Machine pools (Classic clusters only)
-# REPLICAS column: shows min-max when autoscaling is enabled; shows fixed count otherwise.
-# OCM does not expose current live replica counts for autoscaled pools — use
-# `oc get machineset -n openshift-machine-api` inside the cluster for that.
-ocm list machinepool --cluster <CLUSTER_ID>
+# Machine pools (Classic clusters only) — use raw API for JSON output
+# ocm list machinepool does not support --json; use the API path instead.
+# INTERNAL_ID comes from: ocm describe cluster <ID> --json | jq -r '.id'
+ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools
+
+# Parse summary (id, instance_type, replicas/autoscaling range):
+ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools | \
+  jq -r '.items[] | [.id, .instance_type,
+    (if .autoscaling then "\(.autoscaling.min_replicas)-\(.autoscaling.max_replicas)"
+     else (.replicas | tostring) end)] | @tsv'
+
+# Mutating operations (still use the ocm subcommand):
 ocm create machinepool --cluster <CLUSTER_ID> --instance-type=m5.xlarge --replicas=3
 ocm edit machinepool --cluster <CLUSTER_ID> <POOL_ID> --replicas=5
 
 # Node pools (HCP clusters only)
 # ocm list nodepool does not support --cluster; use the raw API with the internal OCM ID.
-# Get the internal ID with: ocm describe cluster <NAME|ID> | grep "^ID:"
+# INTERNAL_ID comes from: ocm describe cluster <ID> --json | jq -r '.id'
 ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools
 ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools/<POOL_ID>
 
-# Parse node pool summary (instance type, replicas/autoscaling, AZ):
+# Parse node pool summary (id, instance_type, replicas/autoscaling, AZ):
+# Note: autoscaling fields are min_replica/max_replica (singular) for node pools,
+#       vs min_replicas/max_replicas (plural) for machine pools.
 ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
-  jq -r '.items[] | [.id, .aws_node_pool.instance_type, (.replicas // "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"), .availability_zone] | @tsv'
+  jq -r '.items[] | [.id, .aws_node_pool.instance_type,
+    (if .autoscaling then "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"
+     else (.replicas | tostring) end),
+    .availability_zone] | @tsv'
 
 # Add-ons
 ocm list addon --cluster <CLUSTER_ID>
