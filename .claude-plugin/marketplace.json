@@ -11,6 +11,14 @@
       "version": "0.1.0",
       "category": "openshift",
       "keywords": ["ocm", "openshift", "rosa", "aro", "osd", "clusters"]
+    },
+    {
+      "name": "rosa",
+      "source": "./plugins/rosa",
+      "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
+      "version": "0.1.0",
+      "category": "openshift",
+      "keywords": ["rosa", "hcp", "cost", "optimization", "aws", "openshift"]
     }
   ]
 }

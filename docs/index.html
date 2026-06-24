@@ -421,6 +421,78 @@ footer a { color: var(--primary); }
       "author": {
         "name": "github.com/rh-mobb"
       }
+    },
+    {
+      "name": "rosa",
+      "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
+      "version": "0.1.0",
+      "has_readme": true,
+      "commands": [
+        {
+          "name": "cost",
+          "full_name": "rosa:cost",
+          "description": "Guided wizard for ROSA cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "description_html": "Guided wizard for ROSA cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "synopsis": "/rosa:cost",
+          "body_html": "\u003cp\u003eEntry point for ROSA cost analysis. Collects required information conversationally and produces the appropriate output for the situation.\u003c/p\u003e\u003cp\u003eUse this command when you are not sure which focused command applies. Power users can go straight to \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e, \u003ccode\u003e/rosa:cost-compare\u003c/code\u003e, \u003ccode\u003e/rosa:cost-optimize\u003c/code\u003e, or \u003ccode\u003e/rosa:cost-report\u003c/code\u003e.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-compare",
+          "full_name": "rosa:cost-compare",
+          "description": "Show Classic vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "description_html": "Show Classic vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "synopsis": "/rosa:cost-compare [inputs]",
+          "body_html": "\u003cp\u003eRuns the cost formula for the same fleet twice — once as Classic, once as HCP — and shows the results side-by-side with a Savings column.\u003c/p\u003e\u003cp\u003eAccepts the same inputs as \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates. Supports the same optional overrides (discount terms for ROSA and EC2, custom discount percentages).\u003c/p\u003e"
+        },
+        {
+          "name": "cost-estimate",
+          "full_name": "rosa:cost-estimate",
+          "description": "Calculate monthly and annual costs for a ROSA fleet at its current configuration.",
+          "description_html": "Calculate monthly and annual costs for a ROSA fleet at its current configuration.",
+          "synopsis": "/rosa:cost-estimate [inputs]",
+          "body_html": "\u003cp\u003eCalculates monthly and annual costs for a fleet of ROSA Classic or HCP clusters.\u003c/p\u003e\u003cp\u003eAccepts three input modes:\u003cbr\u003e- \u003cstrong\u003eLive\u003c/strong\u003e: OCM cluster IDs — requires active \u003ccode\u003eocm login\u003c/code\u003e\u003cbr\u003e- \u003cstrong\u003eDetailed\u003c/strong\u003e: pool spec block (cluster name, instance type, replica count per pool)\u003cbr\u003e- \u003cstrong\u003eEstimate\u003c/strong\u003e: cluster count and total vCPU budget\u003c/p\u003e\u003cp\u003eOptional overrides (provide inline with your request):\u003cbr\u003e- \u003ccode\u003ediscount=1yr\u003c/code\u003e or \u003ccode\u003ediscount=3yr\u003c/code\u003e — ROSA worker node fee contract term (default: PAYGO)\u003cbr\u003e- \u003ccode\u003eec2=1yr\u003c/code\u003e or \u003ccode\u003eec2=3yr\u003c/code\u003e — EC2 reserved instance term (default: on-demand)\u003cbr\u003e- \u003ccode\u003erh_discount=15%\u003c/code\u003e — custom ROSA fee discount percentage\u003cbr\u003e- \u003ccode\u003eec2_discount=40%\u003c/code\u003e — custom EC2 discount percentage\u003c/p\u003e"
+        },
+        {
+          "name": "cost-optimize",
+          "full_name": "rosa:cost-optimize",
+          "description": "Rank cost savings opportunities for a ROSA fleet with estimated savings and implementation complexity.",
+          "description_html": "Rank cost savings opportunities for a ROSA fleet with estimated savings and implementation complexity.",
+          "synopsis": "/rosa:cost-optimize [inputs]",
+          "body_html": "\u003cp\u003eAnalyzes a ROSA fleet and produces a ranked list of cost optimization opportunities, each with estimated monthly savings and implementation complexity (low / medium / high).\u003c/p\u003e\u003cp\u003eAccepts the same inputs as \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e, plus:\u003cbr\u003e- \u003ccode\u003earm_pct=50\u003c/code\u003e — target percentage of fleet to migrate to ARM Graviton (default: 50%)\u003cbr\u003e- \u003ccode\u003eprod_clusters=N\u003c/code\u003e — number of production clusters (used for Karpenter scale-to-zero savings on non-prod)\u003c/p\u003e"
+        },
+        {
+          "name": "cost-report",
+          "full_name": "rosa:cost-report",
+          "description": "Generate a full strategic advisory report for Classic-to-HCP migration with phased plan and month-by-month cost timeline.",
+          "description_html": "Generate a full strategic advisory report for Classic-to-HCP migration with phased plan and month-by-month cost timeline.",
+          "synopsis": "/rosa:cost-report [inputs]",
+          "body_html": "\u003cp\u003eGenerates a full strategic advisory report for customers migrating from ROSA Classic to HCP. Appropriate for customer-facing engagements where a structured, quantified migration recommendation is required.\u003c/p\u003e\u003cp\u003eThis command is for existing Classic clusters only. For greenfield HCP customers, use \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e or \u003ccode\u003e/rosa:cost-compare\u003c/code\u003e.\u003c/p\u003e\u003cp\u003eAccepts the same inputs as \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e, plus:\u003cbr\u003e- \u003ccode\u003earm_pct=50\u003c/code\u003e — target percentage of fleet to migrate to ARM Graviton after HCP migration (default: 50%)\u003cbr\u003e- \u003ccode\u003eprod_clusters=N\u003c/code\u003e — number of production clusters (drives phase timing)\u003c/p\u003e"
+        }
+      ],
+      "skills": [
+        {
+          "name": "rosa-cost",
+          "description": "Pricing data, calculation methodology, and output templates for ROSA cost estimation.\n\nUse when:\n- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\n- Comparing Classic vs HCP costs with a savings delta\n- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\n- Generating strategic advisory reports for Classic→HCP migration engagements\n\nHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\n\nNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\n",
+          "description_html": "\u003cp\u003ePricing data, calculation methodology, and output templates for ROSA cost estimation.\u003c/p\u003e\u003cp\u003eUse when:\u003cbr\u003e- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\u003cbr\u003e- Comparing Classic vs HCP costs with a savings delta\u003cbr\u003e- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\u003cbr\u003e- Generating strategic advisory reports for Classic→HCP migration engagements\u003c/p\u003e\u003cp\u003eHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        }
+      ],
+      "agents": [],
+      "hooks": [],
+      "mcp_servers": [],
+      "rules": [],
+      "category": "openshift",
+      "keywords": [
+        "rosa",
+        "hcp",
+        "cost",
+        "optimization",
+        "aws",
+        "openshift"
+      ],
+      "author": {
+        "name": "github.com/rh-mobb"
+      }
     }
   ],
   "standalone_skills": []
