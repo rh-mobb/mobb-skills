@@ -4,9 +4,9 @@ Claude Code plugin for OpenShift Cluster Manager (OCM) operations.
 
 ## Features
 
-- Key Authentication — Login, logout, and profile management
-- Search Cluster Management — List, describe, create, and delete clusters
-- Robot AI Reference — Full OCM CLI reference skill for AI-assisted operations
+- 🔑 **Authentication** — Login, logout, and profile management
+- 🔍 **Cluster Management** — List, describe, create, and delete clusters
+- 🤖 **AI Reference** — Full OCM CLI reference skill for AI-assisted operations
 
 ## Prerequisites
 
