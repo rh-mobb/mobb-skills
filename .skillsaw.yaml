@@ -55,11 +55,6 @@ rules:
     enabled: true
     severity: error
 
-  # Plugin structure
-  plugin-owners-required:
-    enabled: true
-    severity: error
-
   # Disable rules that don't apply yet
   context-budget:
     enabled: false

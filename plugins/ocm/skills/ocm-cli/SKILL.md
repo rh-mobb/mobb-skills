@@ -17,7 +17,7 @@ license: Apache-2.0
 user_invocable: true
 model: inherit
 color: "#cc0000"
-allowed-tools:
+allowed-tools: []
 ---
 
 # OCM CLI Reference
