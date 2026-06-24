@@ -1,0 +1,8 @@
+{
+  "name": "ocm",
+  "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
+  "version": "0.1.0",
+  "author": {
+    "name": "github.com/rh-mobb"
+  }
+}
