@@ -131,11 +131,32 @@ Requires an active OCM login. Before running any `ocm` command:
    OCM_CONFIG="$HOME/Library/Application Support/ocm/<profile-name>.json" ocm login --token=<token>
    ```
 
-3. **Pull machine pool data** for each cluster ID:
+3. **Detect cluster type and pull pool data** for each cluster ID.
+
+   First, determine whether the cluster is Classic or HCP:
+
+   ```bash
+   CLUSTER_INFO=$(ocm describe cluster "$CLUSTER_ID")
+   IS_HCP=$(echo "$CLUSTER_INFO" | grep "^HCP:" | awk '{print $2}')
+   INTERNAL_ID=$(echo "$CLUSTER_INFO" | grep "^ID:" | awk '{print $2}')
+   ```
+
+   **Classic** (`HCP:` line absent or not `true`) — use machine pools:
 
    ```bash
    ocm list machinepool --cluster <CLUSTER_ID>
    ```
+
+   **HCP** (`HCP: true`) — use node pools via the raw API with the internal OCM ID:
+
+   ```bash
+   ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
+     jq -r '.items[] | [.id, .aws_node_pool.instance_type,
+       (.replicas // "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"),
+       .availability_zone] | @tsv'
+   ```
+
+   HCP node pools labeled `node-role.kubernetes.io/infra` are managed infra nodes — exclude them from worker vCPU counts; they carry no ROSA worker node fee and no customer EC2 cost.
 
 Map instance type family to profile:
 - `m*`, `t*`, `a*` → General Purpose

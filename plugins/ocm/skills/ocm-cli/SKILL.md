@@ -104,18 +104,50 @@ ocm hibernate cluster <NAME|ID>
 ocm resume cluster <NAME|ID>
 ```
 
+## Classic vs HCP Detection
+
+Before running pool-related commands, determine whether a cluster is Classic or HCP:
+
+```bash
+ocm describe cluster <NAME|ID> | grep -E "^ID:|^HCP:"
+# Output:
+#   ID:    2llu9e1irqiimfkq2o6d8e6bqiqr540f   ← internal OCM ID (needed for raw API calls)
+#   HCP:   true                                ← present and true on HCP clusters
+```
+
+- If `HCP: true` → use **NodePool** commands (see below)
+- If `HCP:` line is absent or false → use **MachinePool** commands
+
+To detect programmatically and retrieve the internal ID in one step:
+
+```bash
+CLUSTER_INFO=$(ocm describe cluster "$EXTERNAL_ID")
+IS_HCP=$(echo "$CLUSTER_INFO" | grep "^HCP:" | awk '{print $2}')
+INTERNAL_ID=$(echo "$CLUSTER_INFO" | grep "^ID:" | awk '{print $2}')
+```
+
 ## Resource Management
 
 All resource subcommands take `--cluster <NAME|ID>`:
 
 ```bash
-# Machine pools
+# Machine pools (Classic clusters only)
 # REPLICAS column: shows min-max when autoscaling is enabled; shows fixed count otherwise.
 # OCM does not expose current live replica counts for autoscaled pools — use
 # `oc get machineset -n openshift-machine-api` inside the cluster for that.
 ocm list machinepool --cluster <CLUSTER_ID>
 ocm create machinepool --cluster <CLUSTER_ID> --instance-type=m5.xlarge --replicas=3
 ocm edit machinepool --cluster <CLUSTER_ID> <POOL_ID> --replicas=5
+
+# Node pools (HCP clusters only)
+# ocm list nodepool does not support --cluster; use the raw API with the internal OCM ID.
+# Get the internal ID with: ocm describe cluster <NAME|ID> | grep "^ID:"
+ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools
+ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools/<POOL_ID>
+
+# Parse node pool summary (instance type, replicas/autoscaling, AZ):
+ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
+  jq -r '.items[] | [.id, .aws_node_pool.instance_type, (.replicas // "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"), .availability_zone] | @tsv'
 
 # Add-ons
 ocm list addon --cluster <CLUSTER_ID>
