@@ -1,0 +1,88 @@
+# skillsaw configuration
+# https://github.com/stbenjam/skillsaw
+version: "0.14.0"
+strict: true
+
+rules:
+  # Supply chain protection
+  hooks-dangerous:
+    enabled: true
+    severity: error
+  hooks-prohibited:
+    enabled: true
+    severity: error
+    allowlist: []
+
+  settings-dangerous:
+    enabled: true
+    severity: error
+
+  # MCP allowlist — add servers here as plugins adopt them
+  mcp-prohibited:
+    enabled: true
+    severity: error
+    allowlist:
+      - tmux
+
+  # Instruction file validity
+  instruction-file-valid:
+    enabled: true
+  instruction-imports-valid:
+    enabled: true
+
+  # Skill frontmatter
+  agentskill-valid:
+    enabled: true
+  agentskill-description:
+    enabled: true
+  agentskill-name:
+    enabled: true
+  agentskill-rename-refs:
+    enabled: true
+
+  # Content quality
+  content-weak-language:
+    enabled: true
+  content-cognitive-chunks:
+    enabled: true
+    severity: warning
+  content-tautological:
+    enabled: true
+  content-embedded-secrets:
+    enabled: true
+    severity: error
+  content-broken-internal-reference:
+    enabled: true
+    severity: error
+
+  # Plugin structure
+  plugin-owners-required:
+    enabled: true
+    severity: error
+
+  # Disable rules that don't apply yet
+  context-budget:
+    enabled: false
+  content-critical-position:
+    enabled: false
+  content-negative-only:
+    enabled: false
+  content-unlinked-internal-reference:
+    enabled: false
+  content-placeholder-text:
+    enabled: false
+    severity: warning
+  promptfoo-valid:
+    enabled: false
+  promptfoo-assertions:
+    enabled: false
+  promptfoo-metadata:
+    enabled: false
+
+exclude:
+  - "node_modules/**"
+  - "**/template/**"
+  - "**/templates/**"
+  - "**/_template/**"
+
+content-paths: []
