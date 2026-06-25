@@ -103,66 +103,15 @@ Detect the input mode from what the user provides.
 
 ### Live Mode — Cluster IDs
 
-Requires an active OCM login. Before running any `ocm` command:
+Use the **ocm-cli skill** for all OCM interactions: profile resolution, login confirmation, Classic vs HCP detection, and machine pool / node pool retrieval. Refer to that skill for the exact commands.
 
-1. **Resolve the profile.** If the user specifies a profile name (e.g., "use my `ocm-rh` profile"), set `OCM_CONFIG` to the platform-specific path:
+For each cluster ID, extract:
+- Cluster type (Classic or HCP) — from `hypershift.enabled` in cluster describe JSON
+- Instance type per pool — for EC2 profile mapping (see table below)
+- Replica count or autoscaling min/max per pool — use min replicas as steady-state for break-even analysis
+- AZ count — determines infra node count for Classic (2 = single-AZ, 3 = multi-AZ)
 
-   ```bash
-   # macOS
-   export OCM_CONFIG="$HOME/Library/Application Support/ocm/<profile-name>.json"
-
-   # Linux
-   export OCM_CONFIG="$HOME/.config/ocm/<profile-name>.json"
-   ```
-
-   If no profile is specified, check whether `OCM_CONFIG` is already set; otherwise the default profile is used.
-
-2. **Confirm login:**
-
-   ```bash
-   ocm whoami
-   ```
-
-   If it fails, instruct the user:
-
-   ```bash
-   ocm login --token=<token>  # get token at https://console.redhat.com/openshift/token
-   # To log into a named profile without overwriting the default:
-   OCM_CONFIG="$HOME/Library/Application Support/ocm/<profile-name>.json" ocm login --token=<token>
-   ```
-
-3. **Detect cluster type and pull pool data** for each cluster ID.
-
-   Use JSON throughout — `ocm describe cluster` supports `--json`; pool listing uses the raw API which always returns JSON. If a command fails or returns unexpected output, investigate with `--help` and the raw API before retrying, then update the ocm-cli skill with the correct approach.
-
-   Detect cluster type and get the internal OCM ID (required for raw API calls):
-
-   ```bash
-   CLUSTER_JSON=$(ocm describe cluster "$CLUSTER_ID" --json)
-   INTERNAL_ID=$(echo "$CLUSTER_JSON" | jq -r '.id')
-   IS_HCP=$(echo "$CLUSTER_JSON" | jq -r '.hypershift.enabled // false')
-   ```
-
-   **Classic** (`IS_HCP == false`) — use the machine_pools API:
-
-   ```bash
-   ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools | \
-     jq -r '.items[] | [.id, .instance_type,
-       (if .autoscaling then "\(.autoscaling.min_replicas)-\(.autoscaling.max_replicas)"
-        else (.replicas | tostring) end)] | @tsv'
-   ```
-
-   **HCP** (`IS_HCP == true`) — use the node_pools API:
-
-   ```bash
-   ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
-     jq -r '.items[] | [.id, .aws_node_pool.instance_type,
-       (if .autoscaling then "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"
-        else (.replicas | tostring) end),
-       .availability_zone] | @tsv'
-   ```
-
-   All customer-provisioned node pools in HCP incur the ROSA worker node fee regardless of their Kubernetes label (including pools labeled `node-role.kubernetes.io/infra`). In Classic, infra nodes are RH-managed and free; in HCP, that overhead moves into Red Hat's account — every node pool the customer provisions is billed as a worker node.
+All customer-provisioned node pools in HCP incur the ROSA worker node fee regardless of their Kubernetes label. In Classic, infra nodes are RH-managed and free; in HCP, that overhead moves to Red Hat's account — every pool the customer provisions is billed as a worker node.
 
 Map instance type family to profile:
 - `m*`, `t*`, `a*` → General Purpose
