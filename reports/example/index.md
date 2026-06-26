@@ -39,3 +39,4 @@ _(none)_
 |---|---|---|
 | 2026-06-26 | Cost Analysis | [2026-06-26-cost-analysis.md](2026-06-26-cost-analysis.md) |
 | 2026-06-26 | Cost Optimization | [2026-06-26-cost-optimize.md](2026-06-26-cost-optimize.md) |
+| 2026-06-26 | Interactive Cost Explorer | [cost-explorer.html](cost-explorer.html) |
