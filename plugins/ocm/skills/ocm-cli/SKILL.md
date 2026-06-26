@@ -115,6 +115,39 @@ When an OCM command fails or produces unexpected output, **stop and investigate 
 
 Do not guess at flags or retry with minor variations. The fix belongs in the skill so future sessions start with the right command.
 
+## Cluster Types in OCM
+
+OCM tracks several cluster types under the same API. Always check `product.id` and `managed` before assuming a cluster is ROSA:
+
+| `product.id` | `cloud_provider.id` | `managed` | What it is |
+|---|---|---|---|
+| `rosa` | `aws` | `true` | ROSA Classic — fully managed by Red Hat |
+| `rosa` + `hypershift.enabled` | `aws` | `true` | ROSA HCP — managed, hosted control plane |
+| `osd` | `aws` / `gcp` | `true` | OpenShift Dedicated |
+| `aro` | `azure` | `false` | Azure Red Hat OpenShift — registered in OCM but managed by Microsoft |
+| `ocp` | `azure` / `aws` / other | `false` | Self-managed OCP — registered for subscription tracking only |
+
+**ARO and self-managed OCP have very limited OCM data:**
+- `region.id` is null (region lives in Azure/cloud, not tracked in clusters_mgmt)
+- Cluster name defaults to the Azure resource UUID — no human-readable name
+- Machine pools and node pools return no data (Red Hat does not manage the workers)
+- `managed: false` — Red Hat does not manage the control plane
+
+When listing an org's clusters (e.g. via `/ocm:org-clusters`), ARO and OCP clusters will appear alongside ROSA clusters. Always filter or flag them separately:
+
+```bash
+# ROSA only
+ocm get /api/clusters_mgmt/v1/clusters \
+  --parameter "search=organization.id='<ORG_ID>' and product.id='rosa'" \
+  --parameter "size=100"
+
+# Separate ROSA from non-ROSA in jq
+ocm get /api/clusters_mgmt/v1/clusters \
+  --parameter "search=organization.id='<ORG_ID>'" \
+  --parameter "size=100" \
+  | jq -r '.items[] | [.product.id, .cloud_provider.id, .name, .state] | @tsv'
+```
+
 ## Classic vs HCP Detection
 
 Always use JSON output for cluster describe — it is machine-parseable and avoids fragile text grep:
@@ -130,8 +163,10 @@ The `id` field is the **internal OCM ID** — required for all raw API calls bel
 CLUSTER_JSON=$(ocm describe cluster "$EXTERNAL_UUID" --json)
 INTERNAL_ID=$(echo "$CLUSTER_JSON" | jq -r '.id')
 IS_HCP=$(echo "$CLUSTER_JSON" | jq -r '.hypershift.enabled // false')
+PRODUCT=$(echo "$CLUSTER_JSON" | jq -r '.product.id')
 ```
 
+- If `PRODUCT != rosa` → ARO, OCP, or OSD; machine/node pool APIs will be empty
 - If `IS_HCP == true` → use **NodePool** API (see below)
 - Otherwise → use **MachinePool** API
 

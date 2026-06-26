@@ -80,7 +80,7 @@ Identify clusters with low vCPU counts (e.g., <16 vCPUs) that may be cheaper to 
 
 Complexity: **Medium** (requires cluster migration; potential application downtime during consolidation).
 
-4. Rank all opportunities by estimated annual savings (highest first) and present as a table:
+4. Rank all opportunities by estimated annual savings (highest first) and present as a table. Exception: Karpenter requires HCP as a hard prerequisite — always place the Classic→HCP migration opportunity before Karpenter regardless of relative savings, and note the dependency in the Prerequisite column.
 
 ```
 ## Cost Optimization Recommendations
@@ -110,9 +110,44 @@ For opportunities where a specific savings amount is not quantifiable (e.g., rig
 
 6. Write the full output to the confirmed report path using the report file header format from the rosa-cost skill, followed by the recommendations table, Optimized TCO Table, and narrative.
 
-7. Create or update `reports/<customer-name>/index.md` with any fleet profile data collected and append a row to the Generated Reports table (date, "Cost Optimization", filename).
+7. **Generate the interactive cost explorer HTML:**
 
-8. Follow with a 3–5 sentence narrative:
+   Read `plugins/rosa/skills/rosa-cost/cost-explorer-template.html` and replace all `__PLACEHOLDER__` values with customer-specific data collected during this analysis, then save to `reports/<customer-name>/cost-explorer.html`.
+
+   **Placeholder reference:**
+
+   | Placeholder | Value |
+   |---|---|
+   | `__CUSTOMER_NAME__` | Customer display name |
+   | `__CLUSTER_COUNT__` | Total cluster count |
+   | `__REGION__` | Primary AWS region (e.g. `ap-southeast-1`) |
+   | `__EC2_API_DATE__` | Date EC2 pricing was fetched (YYYY-MM-DD) |
+   | `__ROSA_FEES_DATE__` | Current month (YYYY-MM) |
+   | `__CLASSIC_COUNT__` | Number of Classic clusters |
+   | `__CLUSTERS_JSON__` | JS array literal — one object per cluster (see format below) |
+   | `__EC2_RATES__` | JS object literal — instance key → $/vCPU/hr on-demand |
+   | `__ARM_EC2_RATES__` | JS object literal — `{ memory: <$/vCPU/hr>, general: <$/vCPU/hr> }` for Graviton (r7g / m7g) |
+   | `__CLASSIC_OVERHEAD__` | Classic CP+Infra $/mo per cluster (computed in step 2) |
+
+   **`__CLUSTERS_JSON__` format** — one entry per cluster:
+   ```javascript
+   [
+     { id:'<id>', name:'<name>', type:'classic'|'hcp',
+       vCPU:<n>, nodes:<n>, inst:'<key>', cat:'memory'|'general',
+       steady:<n>, burst:<n> },
+     ...
+   ]
+   ```
+   - `inst`: instance family key matching a key in `__EC2_RATES__` — use `r5a`, `r6i`, `m7i`, `m5`, `m6i`, `t3`, etc. For clusters mixing two families, use an averaged key like `r5a_r6i` and add its rate to EC2_RATES.
+   - `cat`: `memory` for R-family instances (r5, r6, r7); `general` for M/T-family
+   - `steady`: autoscaling minimum vCPUs; fall back to total vCPU if autoscaling data is unavailable
+   - `burst`: autoscaling max − min vCPUs; use 0 if no autoscaling data
+
+   Note the file path in the output alongside the markdown report path.
+
+8. Create or update `reports/<customer-name>/index.md` with any fleet profile data collected and append rows to the Generated Reports table: one for "Cost Optimization" (the .md file) and one for "Cost Explorer" (the .html file).
+
+9. Follow with a 3–5 sentence narrative:
    - Total current fleet spend (monthly and annual)
    - Largest cost driver
    - Top recommendation with estimated annual savings
