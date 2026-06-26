@@ -259,6 +259,29 @@
                @click="s.contractTerm = '3yr'">3-Year</div>
         </div>
 
+        <div class="discount-block" style="margin-top:0.85rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+            <span style="font-size:0.8rem;font-weight:600;">
+              AWS EC2 Discount
+              <span style="font-weight:400;color:#888;font-size:0.75rem;">(EDP / reserved / negotiated)</span>
+            </span>
+            <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:#888;cursor:pointer;">
+              <input type="checkbox" v-model="s.syncEC2" style="accent-color:#ee0000;">
+              Sync with contract
+            </label>
+          </div>
+          <div class="discount-slider-row">
+            <input type="range" min="0" max="70" step="1" v-model.number="s.ec2Discount" :disabled="s.syncEC2">
+            <span class="discount-val">{{ s.ec2Discount }}%</span>
+          </div>
+          <div class="discount-marks">
+            <span>0% (PAYGO)</span>
+            <span>~40% (1yr)</span>
+            <span>~60% (3yr)</span>
+            <span>70%</span>
+          </div>
+        </div>
+
         <!-- Burst -->
         <div class="section-title">Burst Capacity</div>
 
@@ -338,8 +361,9 @@
 
         <div class="status-notes" style="margin-top:0.85rem;">
           <div v-if="s.contractTerm === 'paygo'">⚠ PAYGO: $125/4-vCPU-block/mo — no reserved discounts</div>
-          <div v-if="s.contractTerm === '1yr'">✓ 1-yr ROSA: $83.33/4-vCPU-block/mo · EC2 0.60× OD</div>
-          <div v-if="s.contractTerm === '3yr'">✓ 3-yr ROSA: $55.58/4-vCPU-block/mo · EC2 0.40× OD</div>
+          <div v-if="s.contractTerm === '1yr'">✓ 1-yr ROSA: $83.33/4-vCPU-block/mo</div>
+          <div v-if="s.contractTerm === '3yr'">✓ 3-yr ROSA: $55.58/4-vCPU-block/mo</div>
+          <div>✓ EC2 discount: {{ s.ec2Discount }}% off on-demand{{ s.syncEC2 ? ' (synced to contract)' : '' }}</div>
           <div v-if="s.burstEC2Discount && !fleet.canSpot">✓ Contract discount applied to burst EC2</div>
           <div>✓ Burst {{ s.burstUtilPct }}% utilization → {{ fleet.burstVCPUBilled }} billed vCPU</div>
           <div v-if="s.hcpMigrated">✓ HCP migration: CP/Infra eliminated, $183/cluster/mo</div>
@@ -448,12 +472,12 @@ const ARM_E      = 1.25;             // Graviton performance multiplier
 const SPOT_MULT  = 0.30;             // Spot ≈ 70% off on-demand
 
 // ── Per-cluster cost ────────────────────────────────────────────────────────
-function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct, spotForBurst, burstUtilPct, burstEC2Discount }) {
+function calcCluster(c, { contractTerm, ec2Discount, hcpMigrated, karpenter, armPct, spotForBurst, burstUtilPct, burstEC2Discount }) {
   const isHcp   = c.type === 'hcp' || (hcpMigrated && c.type === 'classic');
   const canKarp = karpenter && isHcp;    // bin-packing only
   const canSpot = spotForBurst && isHcp;
   const binpack = canKarp ? 0.9 : 1.0;
-  const mult    = EC2_MULT[contractTerm];
+  const mult    = 1 - (ec2Discount / 100);
   const rRate   = ROSA_RATE[contractTerm];
   const util    = Math.max(0, Math.min(100, burstUtilPct ?? 100)) / 100;
 
@@ -513,8 +537,12 @@ createApp({
     const chartEl = ref(null);
     let chart = null;
 
+    const CONTRACT_EC2_DISC = { paygo: 0, '1yr': 40, '3yr': 60 };
+
     const s = reactive({
       contractTerm:     '1yr',
+      ec2Discount:      40,
+      syncEC2:          true,
       hcpMigrated:      false,
       karpenter:        false,
       armPct:           0,
@@ -531,6 +559,10 @@ createApp({
     watch(hasHCP, v => {
       if (!v) { s.karpenter = false; s.spotForBurst = false; s.armPct = 0; }
     });
+
+    // Sync EC2 discount to contract term when syncEC2 is on
+    watch(() => s.contractTerm, v => { if (s.syncEC2) s.ec2Discount = CONTRACT_EC2_DISC[v]; });
+    watch(() => s.syncEC2, v => { if (v) s.ec2Discount = CONTRACT_EC2_DISC[s.contractTerm]; });
 
     // Spot for burst and burstEC2Discount are mutually exclusive
     watch(() => s.spotForBurst,     v => { if (v) s.burstEC2Discount = false; });
@@ -553,7 +585,11 @@ createApp({
 
       const TERMS  = ['paygo', '1yr', '3yr'];
       const LABELS = ['PAYGO', '1-Year', '3-Year'];
-      const fleets = TERMS.map(t => calcFleet({ ...s, contractTerm: t }));
+      const fleets = TERMS.map(t => calcFleet({
+        ...s,
+        contractTerm: t,
+        ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC[t] : s.ec2Discount,
+      }));
       const selIdx = TERMS.indexOf(s.contractTerm);
       const col = (full, muted, i) => i === selIdx ? full : muted;
 
