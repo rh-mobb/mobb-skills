@@ -333,9 +333,21 @@ reports/
 
 1. Ask: "What's the customer name?" (use a slug-friendly form, e.g., `acme-corp`)
 2. Check whether `reports/<customer-name>/index.md` exists.
-   - If it exists: read it and pre-populate known fleet data, contract terms, and preferences — skip re-asking for data already recorded.
+   - If it exists: read it and surface the recorded values for the parameters below — the user confirms or overrides, they do not need to re-enter unchanged data.
    - If it does not exist: collect all required data normally; create the index when done.
 3. Propose the default output path and confirm: `reports/<customer-name>/YYYY-MM-DD-<report-name>.md`. Accept an alternative path if the user provides one.
+4. **Confirm pricing assumptions — always ask, never assume, never carry over from a previous customer in the same session.** Suggest the defaults below and wait for the user to confirm or correct each one before doing any calculation:
+
+   | Parameter | Default | What to ask |
+   |---|---|---|
+   | AWS region | us-east-1 | "Which AWS region are their clusters in?" |
+   | ROSA contract term | 1-year | "What ROSA contract term are they on? (PAYGO / 1-year / 3-year)" |
+   | EC2 discount | 40% (standard 1-year reserved) | "Are they on standard reserved pricing, an EDP, or something else? I'll default to standard 1-year reserved (40% off on-demand)." |
+   | Burst utilization | 20% | "What share of the month do burst nodes typically run? I'll default to 20% if you don't have CloudWatch data." |
+
+   If the index.md already records these values, show them as the proposed values rather than re-asking from scratch — but still show them and let the user correct before proceeding.
+
+   **Do not start any cost calculation until all four parameters are confirmed.** A single batch message with all four questions and their defaults is fine — the user can reply with "all defaults" or correct specific ones.
 
 ### Report file header
 
@@ -391,7 +403,7 @@ After every command run: refresh Fleet Profile with any new data collected and a
 
 ## Constraints and Assumptions
 
-- Region: us-east-1. ROSA worker node fees are uniform across AWS standard Regions. EC2 rates may vary but this skill uses us-east-1 as the baseline.
+- Region: confirmed per customer (see Customer setup step 4). ROSA worker node fees are uniform across AWS standard Regions; EC2 rates vary by region — use the AWS Pricing API or the embedded us-east-1 rates as a baseline and note if using a proxy rate for another region.
 - Hours/month: 730.
 - vCPU counts in Live mode come from `ocm list machinepool` replica counts, not live utilization metrics.
 - Discount multipliers are approximations for standard reserved instances. Users with EDP or private pricing should provide explicit percentages.
