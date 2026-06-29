@@ -385,9 +385,33 @@ footer a { color: var(--primary); }
     {
       "name": "ocm",
       "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
-      "version": "0.1.0",
+      "version": "0.5.0",
       "has_readme": true,
       "commands": [
+        {
+          "name": "cluster-describe",
+          "full_name": "ocm:cluster-describe",
+          "description": "Describe a cluster in detail — basic info, identity providers, and machine/node pools.",
+          "description_html": "Describe a cluster in detail — basic info, identity providers, and machine/node pools.",
+          "synopsis": "/ocm:cluster-describe \u003ccluster\u003e",
+          "body_html": "Provides a full description of a cluster: basic metadata, identity providers, and machine pools (Classic) or node pools (HCP). Works for ROSA Classic, ROSA HCP, and OSD clusters. For ARO and self-managed OCP clusters, only basic metadata is shown — pool and IDP data is not available via the OCM API for those types."
+        },
+        {
+          "name": "cluster-owner",
+          "full_name": "ocm:cluster-owner",
+          "description": "Show the Red Hat organization that owns a given cluster.",
+          "description_html": "Show the Red Hat organization that owns a given cluster.",
+          "synopsis": "/ocm:cluster-owner \u003ccluster\u003e",
+          "body_html": "Given a cluster name or ID, resolves and displays the Red Hat organization that owns it. Outputs the org name and org ID — the org ID can be passed directly to \u003ccode\u003e/ocm:org-clusters\u003c/code\u003e."
+        },
+        {
+          "name": "org-clusters",
+          "full_name": "ocm:org-clusters",
+          "description": "List all clusters belonging to a given Red Hat organization.",
+          "description_html": "List all clusters belonging to a given Red Hat organization.",
+          "synopsis": "/ocm:org-clusters \u003corg-id\u003e",
+          "body_html": "Lists every cluster in a Red Hat organization, identified by org ID. Combine with \u003ccode\u003e/ocm:cluster-owner\u003c/code\u003e to go from a cluster → org → full fleet."
+        },
         {
           "name": "whoami",
           "full_name": "ocm:whoami",
@@ -425,7 +449,7 @@ footer a { color: var(--primary); }
     {
       "name": "rosa",
       "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
-      "version": "0.1.0",
+      "version": "0.4.0",
       "has_readme": true,
       "commands": [
         {
@@ -471,6 +495,12 @@ footer a { color: var(--primary); }
       ],
       "skills": [
         {
+          "name": "rosa-cli",
+          "description": "Command reference, lifecycle sequences, and Classic/HCP behavioral differences for the ROSA CLI.\n\nUse when:\n- Creating, managing, or deleting ROSA Classic or HCP clusters\n- Setting up STS roles, OIDC configs, and operator roles\n- Working with node pools, IDPs, ingress, or autoscaler\n- Scheduling or monitoring cluster upgrades\n- Troubleshooting ROSA CLI commands\n\nCovers all rosa subcommands with exact flags and Classic/HCP parallel sections.\nNOT for: ROSA cost estimation (use rosa-cost skill).\n",
+          "description_html": "\u003cp\u003eCommand reference, lifecycle sequences, and Classic/HCP behavioral differences for the ROSA CLI.\u003c/p\u003e\u003cp\u003eUse when:\u003cbr\u003e- Creating, managing, or deleting ROSA Classic or HCP clusters\u003cbr\u003e- Setting up STS roles, OIDC configs, and operator roles\u003cbr\u003e- Working with node pools, IDPs, ingress, or autoscaler\u003cbr\u003e- Scheduling or monitoring cluster upgrades\u003cbr\u003e- Troubleshooting ROSA CLI commands\u003c/p\u003e\u003cp\u003eCovers all rosa subcommands with exact flags and Classic/HCP parallel sections.\u003cbr\u003eNOT for: ROSA cost estimation (use rosa-cost skill).\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
+        {
           "name": "rosa-cost",
           "description": "Pricing data, calculation methodology, and output templates for ROSA cost estimation.\n\nUse when:\n- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\n- Comparing Classic vs HCP costs with a savings delta\n- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\n- Generating strategic advisory reports for Classic→HCP migration engagements\n\nHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\n\nNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\n",
           "description_html": "\u003cp\u003ePricing data, calculation methodology, and output templates for ROSA cost estimation.\u003c/p\u003e\u003cp\u003eUse when:\u003cbr\u003e- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\u003cbr\u003e- Comparing Classic vs HCP costs with a savings delta\u003cbr\u003e- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\u003cbr\u003e- Generating strategic advisory reports for Classic→HCP migration engagements\u003c/p\u003e\u003cp\u003eHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\u003c/p\u003e",
@@ -479,7 +509,14 @@ footer a { color: var(--primary); }
       ],
       "agents": [],
       "hooks": [],
-      "mcp_servers": [],
+      "mcp_servers": [
+        {
+          "name": "awslabs.aws-pricing-mcp-server",
+          "type": "stdio",
+          "endpoint": "uvx",
+          "source": ".mcp.json"
+        }
+      ],
       "rules": [],
       "category": "openshift",
       "keywords": [

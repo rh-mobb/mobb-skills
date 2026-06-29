@@ -664,4 +664,1022 @@ rosa delete account-roles --prefix ManagedOpenShift --mode auto --yes
 
 ---
 
-<!-- sections 4 and 5 follow in the next commit -->
+## Section 4: Command Reference
+
+Every `rosa` subcommand, organized alphabetically within groups. For commands covered in Sections 2–3, this section provides the complete flag table without repeating the lifecycle context.
+
+### attach / detach
+
+```bash
+rosa attach policy --cluster <name|id> --policy-arn <arn>
+rosa detach policy --cluster <name|id> --policy-arn <arn>
+```
+
+Attaches or detaches IAM managed policies to cluster IAM roles. Used for adding permissions beyond the default ROSA policy set.
+
+### completion
+
+```bash
+rosa completion bash
+rosa completion zsh
+rosa completion fish
+rosa completion powershell
+```
+
+Generates shell completion scripts. Add to shell profile with:
+
+```bash
+source <(rosa completion bash)
+```
+
+### config
+
+```bash
+rosa config get <key>
+rosa config set <key> <value>
+rosa config delete <key>
+```
+
+Manages individual keys in the active OCM config file (`$OCM_CONFIG`). Useful for scripting and CI pipelines.
+
+### create account-roles
+
+See Section 2 (Classic) and Section 3 (HCP). Key additional flags:
+
+| Flag | Purpose |
+|---|---|
+| `--force-policy-creation` | Recreate policies even if they exist |
+| `--path <path>` | IAM path (e.g., `/rosa/`) |
+| `--permissions-boundary <arn>` | IAM permissions boundary |
+
+### create admin
+
+```bash
+rosa create admin --cluster <name|id>
+```
+
+Creates a local `cluster-admin` user. The generated password is printed once — save it. There is no flag to set a custom password; delete and recreate to rotate.
+
+### create autoscaler
+
+```bash
+rosa create autoscaler --cluster <name|id> [flags]
+```
+
+| Flag | Purpose |
+|---|---|
+| `--min-cores <int>` | Minimum cluster-wide cores |
+| `--max-cores <int>` | Maximum cluster-wide cores |
+| `--min-memory <size>` | Minimum cluster-wide memory (e.g., `0GiB`) |
+| `--max-memory <size>` | Maximum cluster-wide memory |
+| `--balance-similar-node-groups` | Attempt to balance similar node groups |
+| `--skip-nodes-with-local-storage` | Don't scale down nodes with local storage |
+| `--log-verbosity <int>` | Autoscaler log verbosity |
+| `--max-pod-grace-period <int>` | Seconds before force-deleting pods |
+| `--pod-priority-threshold <int>` | Only scale for pods above this priority |
+| `--scale-down-enabled` | Enable scale-down |
+| `--scale-down-delay-after-add <duration>` | Wait after scale-up before scale-down |
+| `--scale-down-delay-after-delete <duration>` | Wait after scale-down before next |
+| `--scale-down-delay-after-failure <duration>` | Wait after failed scale-down |
+| `--scale-down-utilization-threshold <float>` | Scale down if node below this utilization |
+
+### create break-glass-credentials
+
+```bash
+rosa create break-glass-credentials \
+  --cluster <name|id> \
+  --username <name> \
+  --expiration <duration>
+```
+
+Creates emergency credentials (kubeconfig) for cluster access when normal auth is unavailable. HCP only.
+
+### create cluster
+
+See Section 2 (Classic) and Section 3 (HCP) for the full flag table.
+
+### create dns-domain
+
+```bash
+rosa create dns-domain
+```
+
+Creates a custom DNS domain for use with ROSA clusters. Not commonly needed — OCM provides a default `openshiftapps.com` domain.
+
+### create external-auth-provider
+
+See Section 3 (HCP Day 2).
+
+### create iam-service-account
+
+```bash
+rosa create iam-service-account \
+  --cluster <name|id> \
+  --name <name> \
+  --namespace <namespace> \
+  --role-arn <arn>
+```
+
+Creates an AWS IAM service account annotation on a Kubernetes service account, enabling IRSA (IAM Roles for Service Accounts) for workloads.
+
+### create idp
+
+```bash
+rosa create idp --cluster <name|id> --type <type> --name <name> [type-specific-flags]
+```
+
+| IDP type | Required flags |
+|---|---|
+| `htpasswd` | _(interactive — no CLI flags for user/pass)_ |
+| `github` | `--client-id`, `--client-secret`, `--organizations` or `--teams` |
+| `gitlab` | `--client-id`, `--client-secret`, `--host-url` |
+| `google` | `--client-id`, `--client-secret`, `--hosted-domain` |
+| `ldap` | `--url`, `--bind-dn`, `--bind-password`, `--id-attrs` |
+| `openid` | `--client-id`, `--client-secret`, `--issuer-url`, `--email-claims`, `--name-claims`, `--username-claims` |
+
+### create image-mirror
+
+```bash
+rosa create image-mirror \
+  --cluster <name|id> \
+  --source <registry/image> \
+  --dest <registry/image>
+```
+
+Configures image mirroring rules for disconnected or air-gapped cluster environments.
+
+### create ingress
+
+```bash
+rosa create ingress --cluster <name|id> [--private]
+```
+
+Creates an additional ingress controller. The `--private` flag makes the load balancer internal-only.
+
+### create kubeletconfig
+
+See Section 2 (Day 2 KubeletConfig).
+
+### create log-forwarder
+
+```bash
+rosa create log-forwarder \
+  --cluster <name|id> \
+  --spec-path logforwarder.yaml
+```
+
+Configures cluster-level log forwarding via a ClusterLogForwarder manifest. HCP and Classic.
+
+### create machinepool
+
+See Section 2 (Classic Day 2 Machine Pools) and Section 3 (HCP Day 2 Node Pools).
+
+### create network
+
+```bash
+rosa create network \
+  --region us-east-1 \
+  --template-dir ./network-templates \
+  --param VpcCidr=10.0.0.0/16
+```
+
+Creates AWS network resources from a CloudFormation template. Used for pre-provisioning VPCs for BYO networking.
+
+### create ocm-role
+
+```bash
+rosa create ocm-role \
+  --mode auto \
+  --prefix ManagedOpenShift \
+  --admin \
+  --yes
+```
+
+Creates the OCM organization role that allows OCM to interact with the AWS account. Required for the first ROSA cluster in an AWS account.
+
+| Flag | Purpose |
+|---|---|
+| `--admin` | Create with admin permissions (required for STS cluster creation) |
+| `--prefix <string>` | Role name prefix |
+
+### create oidc-config
+
+See Section 2 (Classic Day 0) and Section 3 (HCP Day 0).
+
+### create oidc-provider
+
+```bash
+rosa create oidc-provider --cluster <name|id> --mode auto --yes
+```
+
+Classic only — creates the IAM OIDC provider entry. HCP creates this automatically.
+
+### create operator-roles
+
+See Section 2 (Classic) and Section 3 (HCP).
+
+### create service
+
+```bash
+rosa create service --type <type> [flags]
+```
+
+Creates a managed cloud service (e.g., RDS, ElastiCache) linked to the cluster via AWS Controllers for Kubernetes (ACK). Experimental.
+
+### create tuning-config
+
+See Section 2 (Day 2 Tuning Configs).
+
+### create user-role
+
+```bash
+rosa create user-role --mode auto --prefix ManagedOpenShift --yes
+```
+
+Creates the OCM user role that links the OCM user account to an AWS IAM role. Required for STS cluster creation.
+
+### delete account-roles
+
+```bash
+rosa delete account-roles --prefix ManagedOpenShift --mode auto --yes
+```
+
+Deletes all account-level IAM roles with the given prefix. Only run when decommissioning the entire ROSA presence in an AWS account.
+
+### delete admin
+
+```bash
+rosa delete admin --cluster <name|id>
+```
+
+Removes the `cluster-admin` local user.
+
+### delete autoscaler
+
+```bash
+rosa delete autoscaler --cluster <name|id>
+```
+
+### delete break-glass-credentials
+
+```bash
+rosa delete break-glass-credentials --cluster <name|id> --id <credential-id>
+```
+
+### delete cluster
+
+```bash
+rosa delete cluster --cluster <name|id> --watch --yes
+```
+
+Initiates cluster deletion. `--watch` streams the deletion log. After deletion completes, clean up operator-roles and OIDC config.
+
+### delete dns-domain
+
+```bash
+rosa delete dns-domain --id <domain-id>
+```
+
+### delete external-auth-provider
+
+```bash
+rosa delete external-auth-provider --cluster <name|id> --name <provider-name>
+```
+
+### delete iam-service-account
+
+```bash
+rosa delete iam-service-account --cluster <name|id> --name <name> --namespace <namespace>
+```
+
+### delete idp
+
+```bash
+rosa delete idp --cluster <name|id> --name <idp-name>
+```
+
+### delete image-mirror
+
+```bash
+rosa delete image-mirror --cluster <name|id> --id <mirror-id>
+```
+
+### delete ingress
+
+```bash
+rosa delete ingress --cluster <name|id> --id <ingress-id>
+```
+
+The default ingress controller cannot be deleted.
+
+### delete kubeletconfig
+
+```bash
+rosa delete kubeletconfig --cluster <name|id> --name <config-name>
+```
+
+### delete log-forwarder
+
+```bash
+rosa delete log-forwarder --cluster <name|id>
+```
+
+### delete machinepool
+
+```bash
+rosa delete machinepool --cluster <name|id> --name <pool-name> --yes
+```
+
+The default machine pool (`workers`) cannot be deleted.
+
+### delete ocm-role
+
+```bash
+rosa delete ocm-role --role-arn <arn> --mode auto --yes
+```
+
+### delete oidc-config
+
+```bash
+rosa delete oidc-config --oidc-config-id <id> --mode auto --yes
+```
+
+Only delete if no clusters are using the OIDC config.
+
+### delete oidc-provider
+
+```bash
+rosa delete oidc-provider --cluster <name|id> --mode auto --yes
+```
+
+Classic only. Run after cluster deletion.
+
+### delete operator-roles
+
+```bash
+# By cluster (Classic)
+rosa delete operator-roles --cluster <name|id> --mode auto --yes
+
+# By OIDC config ID (HCP, or when cluster is already deleted)
+rosa delete operator-roles --oidc-config-id <id> --prefix ManagedOpenShift --mode auto --yes
+```
+
+### delete service
+
+```bash
+rosa delete service --id <service-id>
+```
+
+### delete tuning-config
+
+```bash
+rosa delete tuning-config --cluster <name|id> --name <config-name>
+```
+
+### delete upgrade
+
+```bash
+rosa delete upgrade --cluster <name|id>
+```
+
+Cancels a scheduled cluster upgrade.
+
+### delete user-role
+
+```bash
+rosa delete user-role --role-arn <arn> --mode auto --yes
+```
+
+### describe access-request
+
+```bash
+rosa describe access-request --id <request-id>
+```
+
+### describe account-roles
+
+```bash
+rosa describe account-roles --prefix ManagedOpenShift
+```
+
+Shows the ARNs and policy versions of account-level IAM roles.
+
+### describe addon
+
+```bash
+rosa describe addon --addon-id <id>
+```
+
+### describe break-glass-credentials
+
+```bash
+rosa describe break-glass-credentials --cluster <name|id>
+```
+
+### describe cluster
+
+```bash
+rosa describe cluster --cluster <name|id>
+rosa describe cluster --cluster <name|id> --output json
+```
+
+Full cluster detail: state, version, STS config, network CIDRs, node counts, upgrade schedule.
+
+### describe dns-domain
+
+```bash
+rosa describe dns-domain --id <domain-id>
+```
+
+### describe external-auth-provider
+
+```bash
+rosa describe external-auth-provider --cluster <name|id> --name <provider-name>
+```
+
+### describe gates
+
+```bash
+rosa describe gates --version <version>
+```
+
+Lists version gate acknowledgments required before upgrading to a given version.
+
+### describe iam-service-accounts
+
+```bash
+rosa describe iam-service-accounts --cluster <name|id>
+```
+
+### describe idp
+
+```bash
+rosa describe idp --cluster <name|id> --name <idp-name>
+```
+
+### describe image-mirror
+
+```bash
+rosa describe image-mirror --cluster <name|id>
+```
+
+### describe ingress
+
+```bash
+rosa describe ingress --cluster <name|id>
+```
+
+### describe instance-types
+
+```bash
+rosa describe instance-types
+```
+
+Lists available EC2 instance types for ROSA clusters.
+
+### describe kubeletconfig
+
+```bash
+rosa describe kubeletconfig --cluster <name|id> --name <config-name>
+```
+
+### describe log-forwarder
+
+```bash
+rosa describe log-forwarder --cluster <name|id>
+```
+
+### describe machinepool
+
+```bash
+rosa describe machinepool --cluster <name|id> --machinepool <pool-name>
+```
+
+### describe ocm-roles
+
+```bash
+rosa describe ocm-roles
+```
+
+### describe oidc-config
+
+```bash
+rosa describe oidc-config --id <oidc-config-id>
+```
+
+### describe oidc-provider
+
+```bash
+rosa describe oidc-provider --cluster <name|id>
+```
+
+### describe operator-roles
+
+```bash
+rosa describe operator-roles --cluster <name|id>
+```
+
+### describe region
+
+```bash
+rosa describe region --region <region>
+```
+
+Shows ROSA availability and supported features for a given AWS region.
+
+### describe rh-region
+
+```bash
+rosa describe rh-region
+```
+
+Shows the OCM API region (API endpoint geography).
+
+### describe service
+
+```bash
+rosa describe service --id <service-id>
+```
+
+### describe tuning-config
+
+```bash
+rosa describe tuning-config --cluster <name|id> --name <config-name>
+```
+
+### describe upgrade
+
+```bash
+rosa describe upgrade --cluster <name|id>
+```
+
+Shows the current or scheduled upgrade for a cluster.
+
+### describe user
+
+```bash
+rosa describe user --cluster <name|id>
+```
+
+### describe user-roles
+
+```bash
+rosa describe user-roles
+```
+
+### describe version
+
+```bash
+rosa describe version --version <version>
+```
+
+Shows release notes, channel group, and upgrade paths for a specific OCP version.
+
+### docs
+
+```bash
+rosa docs
+```
+
+Opens the ROSA documentation in the default browser.
+
+### download
+
+```bash
+rosa download rosa
+rosa download kubectl
+rosa download oc
+rosa download rosa-client
+```
+
+Downloads the specified CLI binary to the current directory.
+
+### edit autoscaler
+
+```bash
+rosa edit autoscaler --cluster <name|id> [flags]
+```
+
+Same flags as `create autoscaler`.
+
+### edit cluster
+
+```bash
+rosa edit cluster --cluster <name|id> [flags]
+```
+
+| Flag | Purpose |
+|---|---|
+| `--private` | Toggle private API endpoint |
+| `--enable-autoscaling` | Enable cluster autoscaler |
+| `--min-replicas <int>` | Autoscaler min workers |
+| `--max-replicas <int>` | Autoscaler max workers |
+| `--node-drain-grace-period <duration>` | Grace period for node drain |
+| `--audit-log-arn <arn>` | Enable audit logging to CloudWatch |
+
+### edit image-mirror
+
+```bash
+rosa edit image-mirror --cluster <name|id> --id <mirror-id> [flags]
+```
+
+### edit ingress
+
+```bash
+rosa edit ingress --cluster <name|id> --id <ingress-id> [flags]
+```
+
+| Flag | Purpose |
+|---|---|
+| `--private` | Make ingress load balancer internal |
+| `--lb-type <type>` | `nlb` or `classic` |
+| `--excluded-namespaces <list>` | Namespaces excluded from this ingress |
+| `--wildcard-policy <policy>` | `WildcardsAllowed` or `WildcardsDisallowed` |
+| `--namespace-ownership-policy <policy>` | `Strict` or `InterNamespaceAllowed` |
+
+### edit kubeletconfig
+
+```bash
+rosa edit kubeletconfig --cluster <name|id> --name <config-name> --pod-pids-limit <int>
+```
+
+### edit log-forwarder
+
+```bash
+rosa edit log-forwarder --cluster <name|id> --spec-path updated.yaml
+```
+
+### edit machinepool
+
+```bash
+rosa edit machinepool --cluster <name|id> --name <pool-name> [flags]
+```
+
+Same flags as `create machinepool` except instance type and AZ are immutable after creation.
+
+### edit service
+
+```bash
+rosa edit service --id <service-id> [flags]
+```
+
+### edit tuning-config
+
+```bash
+rosa edit tuning-config --cluster <name|id> --name <config-name> --spec-path updated.yaml
+```
+
+### grant
+
+```bash
+rosa grant user <role> --cluster <name|id> --user <username>
+```
+
+Grants a cluster role (`cluster-admin`, `dedicated-admin`) to a user. Requires an IDP to be configured.
+
+### hibernate
+
+```bash
+rosa hibernate cluster --cluster <name|id>
+```
+
+Hibernates a cluster. See Section 2 for context.
+
+### initialize
+
+```bash
+rosa initialize [--region <region>]
+```
+
+Runs pre-flight checks and initializes the AWS account for ROSA: verifies AWS credentials, IAM permissions, service quotas, and ELB roles. Run once before creating the first cluster in an account.
+
+### install / uninstall add-ons
+
+```bash
+# Install
+rosa install addon <addon-id> --cluster <name|id> [addon-specific-flags]
+
+# Check status
+rosa describe addon --cluster <name|id> --addon-id <id>
+
+# Uninstall
+rosa uninstall addon <addon-id> --cluster <name|id>
+```
+
+Add-ons are managed Red Hat or partner services installed into clusters (e.g., RHODS, Compliance Operator, cost-management).
+
+### link / unlink
+
+```bash
+rosa link ocm-role --role-arn <arn>
+rosa unlink ocm-role --role-arn <arn>
+
+rosa link user-role --role-arn <arn>
+rosa unlink user-role --role-arn <arn>
+```
+
+Links or unlinks an AWS IAM role to the OCM organization or user identity. Required as part of the initial STS setup.
+
+### list access-requests
+
+```bash
+rosa list access-requests
+```
+
+### list account-roles
+
+```bash
+rosa list account-roles --prefix ManagedOpenShift
+```
+
+### list addon
+
+```bash
+rosa list addon
+rosa list addon --cluster <name|id>
+```
+
+Lists available add-ons (without `--cluster`) or installed add-ons (with `--cluster`).
+
+### list autoscaler
+
+```bash
+rosa describe autoscaler --cluster <name|id>
+```
+
+(The autoscaler list is actually `describe` — there is only one autoscaler per cluster.)
+
+### list break-glass-credentials
+
+```bash
+rosa list break-glass-credentials --cluster <name|id>
+```
+
+### list cluster
+
+```bash
+rosa list cluster
+rosa list cluster --output json
+```
+
+Lists all clusters visible to the authenticated OCM user.
+
+### list dns-domain
+
+```bash
+rosa list dns-domains
+```
+
+### list external-auth-provider
+
+```bash
+rosa list external-auth-provider --cluster <name|id>
+```
+
+### list iam-service-account
+
+```bash
+rosa list iam-service-account --cluster <name|id>
+```
+
+### list idp
+
+```bash
+rosa list idp --cluster <name|id>
+```
+
+### list image-mirror
+
+```bash
+rosa list image-mirror --cluster <name|id>
+```
+
+### list ingress
+
+```bash
+rosa list ingress --cluster <name|id>
+```
+
+### list installation
+
+```bash
+rosa list installation --cluster <name|id>
+```
+
+Lists installation history for a cluster.
+
+### list kubeletconfig
+
+```bash
+rosa list kubeletconfig --cluster <name|id>
+```
+
+### list log-forwarder
+
+```bash
+rosa list log-forwarder --cluster <name|id>
+```
+
+### list machinepool
+
+```bash
+rosa list machinepool --cluster <name|id>
+rosa list machinepool --cluster <name|id> --output json
+```
+
+### list ocm-roles
+
+```bash
+rosa list ocm-roles
+```
+
+### list oidc-config
+
+```bash
+rosa list oidc-config
+```
+
+Lists all OIDC configs in the OCM organization.
+
+### list oidc-provider
+
+```bash
+rosa list oidc-provider
+```
+
+### list operator-roles
+
+```bash
+rosa list operator-roles --prefix ManagedOpenShift
+```
+
+### list region
+
+```bash
+rosa list region
+rosa list region --multi-az
+```
+
+Lists AWS regions where ROSA is available. `--multi-az` limits to regions with 3+ AZs.
+
+### list service
+
+```bash
+rosa list service --cluster <name|id>
+```
+
+### list tuning-config
+
+```bash
+rosa list tuning-config --cluster <name|id>
+```
+
+### list upgrade
+
+```bash
+rosa list upgrade --cluster <name|id>
+```
+
+Lists available upgrade versions for a cluster.
+
+### list user-roles
+
+```bash
+rosa list user-roles
+```
+
+### list version
+
+```bash
+rosa list version
+rosa list version --channel-group candidate
+rosa list version --hosted-cp
+```
+
+Lists available OCP versions. `--hosted-cp` shows HCP-compatible versions.
+
+### login
+
+See Section 1.
+
+### logout
+
+See Section 1.
+
+### logs
+
+```bash
+rosa logs install --cluster <name|id> [--watch] [--tail <n>]
+rosa logs uninstall --cluster <name|id> [--watch]
+```
+
+Streams or tails cluster install or uninstall logs.
+
+### register
+
+```bash
+rosa register cluster --cluster-id <id> [--domain-prefix <prefix>]
+```
+
+Registers an externally provisioned HCP cluster with OCM. Used for bring-your-own-cluster scenarios.
+
+### resume
+
+```bash
+rosa resume cluster --cluster <name|id>
+```
+
+Resumes a hibernated cluster. See Section 2.
+
+### revoke
+
+```bash
+rosa revoke user <role> --cluster <name|id> --user <username>
+```
+
+Revokes a cluster role from a user.
+
+### token
+
+See Section 1.
+
+### upgrade account-roles
+
+```bash
+rosa upgrade account-roles --prefix ManagedOpenShift --mode auto --yes
+```
+
+Upgrades account-level IAM roles to the latest policy version. Run after an OCP version upgrade.
+
+### upgrade cluster
+
+See Section 2 (Classic) and Section 3 (HCP) for full scheduling syntax.
+
+### upgrade machinepool
+
+```bash
+rosa upgrade machinepool \
+  --cluster <name|id> \
+  --machinepool <name> \
+  --version <version> \
+  --schedule-date <date> \
+  --schedule-time <time> \
+  --yes
+```
+
+Schedules an upgrade for a specific node pool (HCP) or machine pool.
+
+### upgrade operator-roles
+
+```bash
+rosa upgrade operator-roles --cluster <name|id> --mode auto --yes
+```
+
+Upgrades operator role policies after a cluster OCP version upgrade.
+
+### upgrade roles
+
+```bash
+rosa upgrade roles --cluster <name|id> --mode auto --yes
+```
+
+Alias for upgrading all cluster-associated roles (operator roles + account roles) in one step.
+
+### verify
+
+```bash
+rosa verify openshift-client
+rosa verify permissions
+rosa verify quota [--region <region>]
+```
+
+| Subcommand | Purpose |
+|---|---|
+| `openshift-client` | Checks that `oc` is installed and accessible |
+| `permissions` | Validates AWS IAM permissions required for ROSA |
+| `quota` | Validates AWS service quotas for the target region |
+
+### version
+
+```bash
+rosa version
+```
+
+Prints the installed ROSA CLI version. Compare against https://github.com/openshift/rosa/releases to determine if an upgrade is needed.
+
+### whoami
+
+See Section 1.
+
+---
+
+## Section 5: Self-Improvement Principle
+
+When a command produces unexpected output or an error:
+
+1. Check the ROSA CLI reference source at `references/rosa-cli/` (clone instructions in `AGENTS.md` alongside this skill).
+2. Verify the installed CLI version with `rosa version` against the latest release.
+3. For unknown flags or changed behavior, check `references/rosa-cli/CHANGELOG.md` for the relevant version range.
+4. Update this skill if a discrepancy is confirmed — do not silently work around it.
+
+---
