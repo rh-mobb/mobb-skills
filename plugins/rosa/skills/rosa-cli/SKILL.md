@@ -45,12 +45,29 @@ Authenticates the CLI against OCM. Writes credentials to `$OCM_CONFIG` (default:
 | `--insecure` | Skip TLS certificate verification |
 | `--env <string>` | Override API environment (`production`, `staging`, `integration`) |
 
-**Multiple profiles:** Use `OCM_CONFIG` env var to point at different config files.
+**Multiple profiles:** Use `OCM_CONFIG` env var to point at different config files. This controls which credential file rosa reads — confirmed to work via `rosa whoami` showing different users per profile. There is no `--profile` flag; `OCM_CONFIG` is the only profile-switching mechanism.
 
 ```bash
 OCM_CONFIG="$HOME/.config/ocm/ocm-customer.json" rosa login --token <token>
 OCM_CONFIG="$HOME/.config/ocm/ocm-customer.json" rosa whoami
 ```
+
+For convenience with multiple profiles, use shell aliases:
+
+```bash
+alias rosa-apac='OCM_CONFIG="$HOME/.config/ocm/ocm.json" rosa'
+alias rosa-rh='OCM_CONFIG="$HOME/.config/ocm/ocm-rh.json" rosa'
+```
+
+**Important — cluster listing scope:** `rosa list cluster` only shows clusters that the authenticated user **owns or is subscribed to**. It does not show all ROSA clusters visible to the organization account. If you need to list all ROSA clusters across an organization (e.g., as a Red Hat SRE or partner), use the `ocm` CLI instead:
+
+```bash
+# List all ROSA clusters visible to the org account
+OCM_CONFIG="$HOME/.config/ocm/ocm-rh.json" ocm list clusters \
+  --parameter "search=product.id = 'rosa'"
+```
+
+This difference is significant: with an org-wide Red Hat account, `ocm list clusters` may return hundreds of customer clusters while `rosa list cluster` returns only those the authenticated user directly owns.
 
 ### `rosa logout`
 
