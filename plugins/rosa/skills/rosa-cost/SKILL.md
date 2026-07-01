@@ -108,7 +108,8 @@ Use the **ocm-cli skill** for all OCM interactions: profile resolution, login co
 For each cluster ID, extract:
 - Cluster type (Classic or HCP) — from `hypershift.enabled` in cluster describe JSON
 - Instance type per pool — for EC2 profile mapping (see table below)
-- Replica count or autoscaling min/max per pool — use min replicas as steady-state for break-even analysis
+- Replica count or autoscaling min/max per pool
+- **Actual running vCPU if available** — prefer this over autoscaler min as the steady-state input; clusters typically run well above their minimum. Ask the user to check Hybrid Cloud Console analytics (console.redhat.com → Clusters → cluster → Overview → vCPU usage) or Telesense (internal Red Hat analytics) for the current Worker vCPUs figure. If not available, use autoscaler min and note the assumption.
 - AZ count — determines infra node count for Classic (2 = single-AZ, 3 = multi-AZ)
 
 All customer-provisioned node pools in HCP incur the ROSA worker node fee regardless of their Kubernetes label. In Classic, infra nodes are RH-managed and free; in HCP, that overhead moves to Red Hat's account — every pool the customer provisions is billed as a worker node.
@@ -343,7 +344,7 @@ reports/
    | AWS region | us-east-1 | "Which AWS region are their clusters in?" |
    | ROSA contract term | 1-year | "What ROSA contract term are they on? (PAYGO / 1-year / 3-year)" |
    | EC2 discount | 40% (standard 1-year reserved) | "Are they on standard reserved pricing, an EDP, or something else? I'll default to standard 1-year reserved (40% off on-demand)." |
-   | Burst utilization | 20% | "What share of the month do burst nodes typically run? I'll default to 20% if you don't have CloudWatch data." |
+   | Burst utilization | 20% | "What share of the month do burst nodes typically run beyond their current steady state? I'll default to 20%. Check CloudWatch node count metrics, Hybrid Cloud Console analytics, or Telesense for actual data." |
 
    If the index.md already records these values, show them as the proposed values rather than re-asking from scratch — but still show them and let the user correct before proceeding.
 
