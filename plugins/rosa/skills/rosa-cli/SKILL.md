@@ -59,15 +59,15 @@ alias rosa-apac='OCM_CONFIG="$HOME/.config/ocm/ocm.json" rosa'
 alias rosa-rh='OCM_CONFIG="$HOME/.config/ocm/ocm-rh.json" rosa'
 ```
 
-**Important — cluster listing scope:** `rosa list cluster` only shows clusters that the authenticated user **owns or is subscribed to**. It does not show all ROSA clusters visible to the organization account. If you need to list all ROSA clusters across an organization (e.g., as a Red Hat SRE or partner), use the `ocm` CLI instead:
+**Important — cluster listing scope:** `rosa list cluster` is scoped to clusters within your **OCM account's organization subscription**. It does not use the broader cross-organization API visibility that a privileged Red Hat internal account has via OCM. If you need to list all ROSA clusters across customer organizations (e.g., as a Red Hat SRE), use the `ocm` CLI instead:
 
 ```bash
-# List all ROSA clusters visible to the org account
+# List all ROSA clusters visible across customer orgs (requires privileged OCM account)
 OCM_CONFIG="$HOME/.config/ocm/ocm-rh.json" ocm list clusters \
   --parameter "search=product.id = 'rosa'"
 ```
 
-This difference is significant: with an org-wide Red Hat account, `ocm list clusters` may return hundreds of customer clusters while `rosa list cluster` returns only those the authenticated user directly owns.
+This difference is significant: a Red Hat internal account via `ocm list clusters` may return hundreds of customer clusters while `rosa list cluster` with the same credentials returns only clusters in your own organization's subscription.
 
 ### `rosa logout`
 
