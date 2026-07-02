@@ -100,19 +100,21 @@
 
     .radio-row { display: flex; gap: 0.4rem; }
     .radio-btn {
-      flex: 1;
-      text-align: center;
-      padding: 0.35rem 0.5rem;
-      border: 1.5px solid #d0d0d0;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-weight: 500;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 0.15rem; text-align: center; padding: 0.35rem 0.5rem;
+      border: 1.5px solid #d0d0d0; border-radius: 5px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 500;
       transition: border-color 0.12s, background 0.12s, color 0.12s;
       user-select: none;
     }
     .radio-btn:hover:not(.active) { border-color: #aaa; }
     .radio-btn.active { background: #ee0000; color: white; border-color: #ee0000; }
+    .chip {
+      display: inline-block; background: #e8f5e9; color: #2e7d32;
+      font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem;
+      border-radius: 999px; white-space: nowrap;
+    }
+    .radio-btn.active .chip { background: rgba(255,255,255,0.25); color: rgba(255,255,255,0.9); }
 
     .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
     .toggle-row .toggle-label { font-size: 0.82rem; color: #444; }
@@ -243,6 +245,7 @@
         </div>
       </div>
     </div>
+    <div class="note" style="text-align: center; margin-top: 0.5rem;">Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.</div>
 
     <div class="main-grid">
 
@@ -254,9 +257,15 @@
           <div class="radio-btn" :class="{ active: s.contractTerm === 'paygo' }"
                @click="s.contractTerm = 'paygo'">PAYGO</div>
           <div class="radio-btn" :class="{ active: s.contractTerm === '1yr' }"
-               @click="s.contractTerm = '1yr'">1-Year</div>
+               @click="s.contractTerm = '1yr'">
+            1-Year
+            <span class="chip">−${{ fmt(leverSavings.term1yr) }}/mo</span>
+          </div>
           <div class="radio-btn" :class="{ active: s.contractTerm === '3yr' }"
-               @click="s.contractTerm = '3yr'">3-Year</div>
+               @click="s.contractTerm = '3yr'">
+            3-Year
+            <span class="chip">−${{ fmt(leverSavings.term3yr) }}/mo</span>
+          </div>
         </div>
 
         <div class="discount-block" style="margin-top:0.85rem;">
@@ -273,6 +282,7 @@
           <div class="discount-slider-row">
             <input type="range" min="0" max="70" step="1" v-model.number="s.ec2Discount" :disabled="s.syncEC2">
             <span class="discount-val">{{ s.ec2Discount }}%</span>
+            <span v-if="leverSavings.ec2 > 0" class="chip">−${{ fmt(leverSavings.ec2) }}/mo</span>
           </div>
           <div class="discount-marks">
             <span>0% (PAYGO)</span>
@@ -304,6 +314,7 @@
         <div class="toggle-row">
           <span class="toggle-label" :class="{ muted: fleet.canSpot }">
             Apply contract discount to burst
+            <span v-if="leverSavings.burstDisc > 0 && !fleet.canSpot" class="chip">−${{ fmt(leverSavings.burstDisc) }}/mo</span>
           </span>
           <label class="toggle" :class="{ disabled: fleet.canSpot }">
             <input type="checkbox" v-model="s.burstEC2Discount" :disabled="fleet.canSpot">
@@ -315,7 +326,10 @@
         <div class="section-title">Optimization Levers</div>
 
         <div class="toggle-row">
-          <span class="toggle-label">Classic → HCP Migration</span>
+          <span class="toggle-label">
+            Classic → HCP Migration
+            <span v-if="leverSavings.hcp > 0" class="chip">−${{ fmt(leverSavings.hcp) }}/mo</span>
+          </span>
           <label class="toggle">
             <input type="checkbox" v-model="s.hcpMigrated">
             <div class="toggle-track"></div>
@@ -326,6 +340,7 @@
           <span class="toggle-label" :class="{ muted: !hasHCP }">
             Karpenter
             <span style="font-size:0.72rem;color:#999;">(bin-packing, requires HCP)</span>
+            <span v-if="leverSavings.karpenter > 0 && hasHCP" class="chip">−${{ fmt(leverSavings.karpenter) }}/mo</span>
           </span>
           <label class="toggle" :class="{ disabled: !hasHCP }">
             <input type="checkbox" v-model="s.karpenter" :disabled="!hasHCP">
@@ -337,6 +352,7 @@
           <span class="toggle-label" :class="{ muted: !hasHCP }">
             Spot for burst
             <span style="font-size:0.72rem;color:#999;">(requires HCP)</span>
+            <span v-if="leverSavings.spot > 0 && hasHCP" class="chip">−${{ fmt(leverSavings.spot) }}/mo</span>
           </span>
           <label class="toggle" :class="{ disabled: !hasHCP }">
             <input type="checkbox" v-model="s.spotForBurst" :disabled="!hasHCP">
@@ -348,6 +364,7 @@
           <div style="font-size:0.82rem;font-weight:500;margin-bottom:0.3rem;" :style="{ opacity: hasHCP ? 1 : 0.4 }">
             ARM Graviton Target
             <span style="font-weight:400;color:#999;font-size:0.72rem">(Memory Opt, HCP only)</span>
+            <span v-if="leverSavings.arm > 0 && hasHCP && s.armPct > 0" class="chip">−${{ fmt(leverSavings.arm) }}/mo</span>
           </div>
           <div class="slider-wrap">
             <input type="range" min="0" max="100" step="5"
@@ -402,11 +419,12 @@
                 <th>EC2 + EBS</th>
                 <th>CP / Infra</th>
                 <th>Cluster Fee</th>
+                <th>Baseline / mo</th>
                 <th>Total / mo</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="r in fleet.rows" :key="r.id">
+              <tr v-for="(r, idx) in fleet.rows" :key="r.id">
                 <td>
                   {{ r.name }}
                   <span class="badge" :class="r.isHcp ? 'badge-hcp' : 'badge-classic'">
@@ -414,27 +432,32 @@
                   </span>
                   <span v-if="r.canSpot" class="badge badge-spot">Spot burst</span>
                 </td>
-                <td>{{ r.vCPU }}</td>
+                <td style="white-space:nowrap">{{ r.minVCPU }} / <strong>{{ r.steadyVCPU }}</strong> / {{ r.vCPU }}</td>
                 <td>${{ fmt(r.rosaFee) }}</td>
                 <td>${{ fmt(r.ec2Ebs) }}</td>
                 <td>{{ r.cpInfra != null ? '$' + fmt(r.cpInfra) : '—' }}</td>
                 <td>{{ r.clusterFee != null ? '$' + fmt(r.clusterFee) : '—' }}</td>
+                <td>{{ baselineSnapshot.rows ? '$' + fmt(baselineSnapshot.rows[idx].total) : '—' }}</td>
                 <td><strong>${{ fmt(r.total) }}</strong></td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
                 <td>Fleet Total</td>
-                <td>{{ fleet.rows.reduce((s,r) => s+r.vCPU, 0) }}</td>
+                <td style="white-space:nowrap">{{ fleet.rows.reduce((s,r) => s+r.minVCPU, 0) }} / <strong>{{ fleet.rows.reduce((s,r) => s+r.steadyVCPU, 0) }}</strong> / {{ fleet.rows.reduce((s,r) => s+r.vCPU, 0) }}</td>
                 <td>${{ fmt(fleet.rosaFee) }}</td>
                 <td>${{ fmt(fleet.ec2Ebs) }}</td>
                 <td>${{ fmt(fleet.rows.reduce((s,r) => s + (r.cpInfra ?? 0), 0)) }}</td>
                 <td>${{ fmt(fleet.rows.reduce((s,r) => s + (r.clusterFee ?? 0), 0)) }}</td>
+                <td>${{ fmt(baselineSnapshot.total) }}</td>
                 <td>${{ fmt(fleet.total) }}</td>
               </tr>
             </tfoot>
           </table>
           <div class="note">
+            vCPU column shows min / <strong>actual</strong> / max (autoscaler floor / telemetry snapshot / ceiling).
+            Steady-state vCPUs reflect a point-in-time telemetry snapshot (Hybrid Cloud Console / Telesense) where available,
+            or the autoscaler minimum otherwise. Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.
             Burst vCPUs billed at {{ s.burstUtilPct }}% utilization.
             Burst EC2: {{ fleet.canSpot ? 'Spot 0.30× OD' : (s.burstEC2Discount ? 'contract rate' : 'on-demand') }}.
             ARM E=1.25 multiplier: 100 x86 → 80 ARM vCPU for equivalent throughput.
@@ -451,6 +474,7 @@ const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 // ── Fleet data ──────────────────────────────────────────────────────────────
 // inst key must match a key in EC2 below.
 // cat: 'memory' for R-family, 'general' for M/T-family.
+// az:  'single' or 'multi' — Classic clusters only (omit for HCP).
 // steady: autoscaling min vCPUs (fall back to total vCPU if unknown).
 // burst: autoscaling max − min vCPUs (0 if no autoscaling data).
 const CLUSTERS = __CLUSTERS_JSON__;
@@ -571,10 +595,26 @@ createApp({
     const fleet = computed(() => calcFleet(s));
 
     // Baseline: frozen snapshot, initialized on mount, updated by setBaseline()
-    const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0 });
+    const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0, rows: null });
     function setBaseline() {
       baselineSnapshot.value = calcFleet(s);
     }
+
+    const leverSavings = computed(() => {
+      const snap = (o) => calcFleet({ ...s, ...o }).total;
+      const a0 = { armPct: 0 }; // hold ARM neutral so each chip is independent
+      const paygoBase = snap({ contractTerm: 'paygo', ec2Discount: s.syncEC2 ? 0 : s.ec2Discount, ...a0 });
+      return {
+        term1yr:   paygoBase - snap({ contractTerm: '1yr',  ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['1yr']  : s.ec2Discount, ...a0 }),
+        term3yr:   paygoBase - snap({ contractTerm: '3yr',  ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['3yr']  : s.ec2Discount, ...a0 }),
+        ec2:       snap({ ec2Discount: 0, ...a0 }) - snap({ ...a0 }),
+        burstDisc: snap({ burstEC2Discount: false, ...a0 }) - snap({ burstEC2Discount: true, ...a0 }),
+        hcp:       snap({ hcpMigrated: false, karpenter: false, ...a0 }) - snap({ hcpMigrated: true, karpenter: false, ...a0 }),
+        karpenter: snap({ karpenter: false, ...a0 }) - snap({ karpenter: true, ...a0 }),
+        spot:      snap({ spotForBurst: false }) - snap({ spotForBurst: true }),
+        arm:       snap({ armPct: 0 }) - snap({}),
+      };
+    });
 
     const delta    = computed(() => baselineSnapshot.value.total - fleet.value.total);
     const deltaPct = computed(() => baselineSnapshot.value.total > 0
@@ -582,39 +622,30 @@ createApp({
 
     function buildChart() {
       if (!chartEl.value) return;
-
-      const TERMS  = ['paygo', '1yr', '3yr'];
-      const LABELS = ['PAYGO', '1-Year', '3-Year'];
-      const fleets = TERMS.map(t => calcFleet({
-        ...s,
-        contractTerm: t,
-        ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC[t] : s.ec2Discount,
-      }));
-      const selIdx = TERMS.indexOf(s.contractTerm);
-      const col = (full, muted, i) => i === selIdx ? full : muted;
-
+      const base = baselineSnapshot.value;
+      const curr = fleet.value;
       if (chart) chart.destroy();
       chart = new Chart(chartEl.value.getContext('2d'), {
         type: 'bar',
         data: {
-          labels: LABELS,
+          labels: ['Baseline', 'Configured'],
           datasets: [
             {
               label: 'ROSA Worker Fee',
-              data: fleets.map(f => f.rosaFee),
-              backgroundColor: fleets.map((_, i) => col('#ee0000', '#f5c6c6', i)),
+              data: [base.rosaFee, curr.rosaFee],
+              backgroundColor: ['#f5c6c6', '#ee0000'],
               borderRadius: 3,
             },
             {
               label: 'EC2 + EBS',
-              data: fleets.map(f => f.ec2Ebs),
-              backgroundColor: fleets.map((_, i) => col('#0066cc', '#c0d8f5', i)),
+              data: [base.ec2Ebs, curr.ec2Ebs],
+              backgroundColor: ['#c0d8f5', '#0066cc'],
               borderRadius: 3,
             },
             {
               label: 'Overhead (CP/Infra or HCP fee)',
-              data: fleets.map(f => f.overhead),
-              backgroundColor: fleets.map((_, i) => col('#8a8d90', '#e0e0e0', i)),
+              data: [base.overhead, curr.overhead],
+              backgroundColor: ['#e0e0e0', '#8a8d90'],
               borderRadius: 3,
             },
           ],
@@ -661,6 +692,7 @@ createApp({
       setBaseline();
     });
     watch(s, () => buildChart(), { deep: true });
+    watch(baselineSnapshot, () => buildChart());
 
     const fmt  = n => Math.round(n).toLocaleString();
     const fmtK = n => {
@@ -668,7 +700,7 @@ createApp({
       return Math.round(n / 1000) + 'K';
     };
 
-    return { s, hasHCP, fleet, baselineSnapshot, delta, deltaPct, chartEl, fmt, fmtK, setBaseline };
+    return { s, hasHCP, fleet, baselineSnapshot, leverSavings, delta, deltaPct, chartEl, fmt, fmtK, setBaseline };
   },
 }).mount('#app');
 </script>

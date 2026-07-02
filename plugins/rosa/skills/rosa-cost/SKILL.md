@@ -111,6 +111,8 @@ For each cluster ID, extract:
 - Replica count or autoscaling min/max per pool
 - **Actual running vCPU if available** — prefer this over autoscaler min as the steady-state input; clusters typically run well above their minimum. Ask the user to check Hybrid Cloud Console analytics (console.redhat.com → Clusters → cluster → Overview → vCPU usage) or Telesense (internal Red Hat analytics) for the current Worker vCPUs figure. If not available, use autoscaler min and note the assumption.
 - AZ count — determines infra node count for Classic (2 = single-AZ, 3 = multi-AZ)
+- AZ topology per cluster — add `az: "single"` or `az: "multi"` to each Classic cluster entry.
+  Read from `index.md` Fleet Profile (`**AZ topology:**` line). HCP clusters omit this field.
 
 All customer-provisioned node pools in HCP incur the ROSA worker node fee regardless of their Kubernetes label. In Classic, infra nodes are RH-managed and free; in HCP, that overhead moves to Red Hat's account — every pool the customer provisions is billed as a worker node.
 
@@ -401,6 +403,18 @@ Follow with the full command output.
 ```
 
 After every command run: refresh Fleet Profile with any new data collected and append a row to the Generated Reports table.
+
+### Recalculation workflow — when cluster sizes change
+
+Whenever you recalculate cluster vCPU counts for a customer (new telemetry snapshot, updated pool configs, or corrected data), apply this sequence **before** updating any report files:
+
+1. **Update `index.md` first** — revise the Fleet Profile (actual/min/max vCPUs, remaining burst headroom, actual node count, baseline cost) and the Cluster Details table (actual vCPU and remaining burst columns). This is the single source of truth for the customer fleet.
+2. **Update all reports in the customer directory** — every `.md` cost analysis and every `cost-explorer.html` in `reports/<customer-name>/` must reflect the new vCPU basis. Update per-cluster tables, fleet summaries, optimization scenarios, and narrative sections.
+  If a cost explorer HTML file exists, update its `CLUSTERS` JS array to match — including
+  the `az` field on any Classic clusters.
+3. **Note the change** — add a "Revised: YYYY-MM-DD" line to the report header and a brief methodology note explaining what changed (e.g., switched from autoscaler minimum to telemetry-actual vCPUs).
+
+Do not update any report until index.md reflects the new data. This prevents reports from diverging from the customer profile.
 
 ## Constraints and Assumptions
 
