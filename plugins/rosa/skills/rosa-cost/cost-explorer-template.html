@@ -596,8 +596,10 @@ createApp({
 
     // Baseline: frozen snapshot, initialized on mount, updated by setBaseline()
     const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0, rows: null });
+    const baselineSettings = ref(null);
     function setBaseline() {
       baselineSnapshot.value = calcFleet(s);
+      baselineSettings.value = { ...s };
     }
 
     const leverSavings = computed(() => {
