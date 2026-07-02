@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Red Truck Logistics — ROSA Cost Explorer</title>
+  <title>Cathay Pacific — ROSA Cost Explorer</title>
   <script src="https://unpkg.com/vue@3.5.38/dist/vue.global.prod.js"
           integrity="sha384-KYk+4lWOhWTo/BrM+zKkwLtFsD6cs2ClFbaGiX5ozDVHPqF4nOqxVGiHvcyWsw8B"
           crossorigin="anonymous"></script>
@@ -206,6 +206,7 @@
     .badge-classic { background: #fff0e0; color: #7d4a00; }
     .badge-arm     { background: #e8f5e9; color: #2e7d32; }
     .badge-spot    { background: #fff3e0; color: #e65100; }
+    .badge-warn    { background: #fce8e6; color: #c9190b; }
 
     .note { font-size: 0.72rem; color: #999; margin-top: 1rem; line-height: 1.5; }
     .note a { color: #0066cc; }
@@ -214,9 +215,9 @@
 <body>
 <div id="app">
   <div class="header">
-    <h1><span>Red Truck Logistics</span> — ROSA Cost Explorer</h1>
+    <h1><span>Cathay Pacific</span> — ROSA Cost Explorer</h1>
     <div class="header-meta">
-      11 clusters &bull; us-east-1 &bull; EC2 from AWS Pricing API 2026-06 &bull; ROSA fees 2026-06
+      11 clusters (8 Classic, 3 HCP) &bull; ap-southeast-1 / ap-east-1 &bull; Instance types from OCM CLI 2026-07-01 &bull; EC2 from AWS Pricing API 2026-06
     </div>
   </div>
 
@@ -386,17 +387,20 @@
           <div v-if="s.hcpMigrated">✓ HCP migration: CP/Infra eliminated, $183/cluster/mo</div>
           <div v-if="s.karpenter && hasHCP">✓ Karpenter: 10% bin-packing on all workers</div>
           <div v-if="fleet.canSpot">✓ Spot burst: 0.30× on-demand</div>
-          <div v-if="s.armPct > 0 && hasHCP">✓ ARM: {{ s.armPct }}% Memory Opt → r7g (E=1.25, ~20% cheaper/vCPU)</div>
+          <div v-if="s.armPct > 0 && hasHCP">✓ ARM: {{ s.armPct }}% Memory Opt → r7g (E=1.25, ~14% cheaper/vCPU)</div>
           <div v-if="!hasHCP && (s.armPct > 0 || s.karpenter || s.spotForBurst)" class="status-warn">
             ⚠ Karpenter, Spot, and ARM require at least one HCP cluster
           </div>
+          <div class="status-warn">⚠ cxt-ete-1 and rosa3-cp1 (HK) at autoscaler ceiling — zero burst headroom</div>
+          <div class="status-warn">⚠ rosa1-cp1 running at autoscaler minimum — full 1,296 vCPU headroom exposed</div>
         </div>
 
         <div class="note">
-          EC2 rates: us-east-1 on-demand from AWS Pricing API.
+          EC2 rates: confirmed from <code>ocm list machinepools</code> (2026-07-01) + AWS Pricing API.
+          Dominant active pools: r5a.4xlarge (rosa1-ct1/ct2/cp1/cp2), r6i.2xlarge (HK), m7i (rosa5).
+          Legacy r5.2xlarge/t3 pools at 0 replicas — not billed.
           Reserved: 1-yr 0.60×, 3-yr 0.40× OD.
-          ARM E=1.25 performance multiplier applied to node count.
-          EBS: 300 GB gp3 × $0.08/GB-mo per node.
+          EBS: 300 GB gp3 × $0.088/GB-mo per node.
           ROSA: $125/$83.33/$55.58 per 4-vCPU block/mo (PAYGO/1yr/3yr).
         </div>
       </div>
@@ -414,7 +418,7 @@
             <thead>
               <tr>
                 <th>Cluster</th>
-                <th>vCPU</th>
+                <th>min / actual / max vCPU</th>
                 <th>ROSA Fee</th>
                 <th>EC2 + EBS</th>
                 <th>CP / Infra</th>
@@ -431,6 +435,7 @@
                     {{ r.isHcp ? 'HCP' : 'Classic' }}
                   </span>
                   <span v-if="r.canSpot" class="badge badge-spot">Spot burst</span>
+                  <span v-if="r.atCeiling" class="badge badge-warn">At ceiling</span>
                 </td>
                 <td style="white-space:nowrap">{{ r.minVCPU }} / <strong>{{ r.steadyVCPU }}</strong> / {{ r.vCPU }}</td>
                 <td>${{ fmt(r.rosaFee) }}</td>
@@ -455,12 +460,14 @@
             </tfoot>
           </table>
           <div class="note">
-            vCPU column shows min / <strong>actual</strong> / max (autoscaler floor / telemetry snapshot / ceiling).
-            Steady-state vCPUs reflect a point-in-time telemetry snapshot (Hybrid Cloud Console / Telesense) where available,
-            or the autoscaler minimum otherwise. Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.
-            Burst vCPUs billed at {{ s.burstUtilPct }}% utilization.
+            vCPU column: min (autoscaler floor, from OCM for HCP; derived from pool minimums for Classic) / <strong>actual</strong>
+            (Hybrid Cloud Console / Telesense, 2026-06-25) / max (autoscaler ceiling).
+            Instance types confirmed via <code>ocm list machinepools</code> — dominant active pools shown; legacy 0-replica pools excluded.
+            rosa1-cp1 actual = min: cluster is at its autoscaler floor, full 1,296 vCPU headroom exists.
+            rosa3-cp1 and cxt-ete-1 at autoscaler ceiling: zero burst headroom.
             Burst EC2: {{ fleet.canSpot ? 'Spot 0.30× OD' : (s.burstEC2Discount ? 'contract rate' : 'on-demand') }}.
             ARM E=1.25 multiplier: 100 x86 → 80 ARM vCPU for equivalent throughput.
+            Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.
           </div>
         </div>
       </div>
@@ -472,171 +479,125 @@
 const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 
 // ── Fleet data ──────────────────────────────────────────────────────────────
-// inst key must match a key in EC2 below.
-// cat: 'memory' for R-family, 'general' for M/T-family.
-// steady: autoscaling min vCPUs (fall back to total vCPU if unknown).
-// burst: autoscaling max − min vCPUs (0 if no autoscaling data).
+// Instance types confirmed from `ocm list machinepools` (2026-07-01).
+// Active (non-zero) autoscaling pools used; legacy 0-replica pools ignored.
+//
+// inst: key into EC2 rate map below ($/vCPU/hr on-demand).
+// cat:  'memory' (r-family) or 'general' (m/t-family) — used for ARM rate lookup.
+// steady: actual running vCPUs (Hybrid Cloud Console / Telesense, 2026-06-25).
+// min:    sum of autoscaler minimums across active pools.
+// burst:  autoscaler max − actual (remaining headroom).
+// nodes:  estimated node count at steady-state (for EBS calculation).
+// oh:     Classic CP+Infra overhead/mo (1yr reserved, multi-AZ). $1,185 both regions.
+// atCeiling: actual == max (zero burst headroom).
 const CLUSTERS = [
+  // ── ap-southeast-1 (Singapore) ─────────────────────────────────────────
+  // rosa5-dsp-cp1: active pools all m7i (xlarge→12xlarge) — uniform $0.0630/vCPU/hr
   {
-    "id": "a3f4c2e1",
-    "name": "prod-core-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 75,
-    "steady": 1000,
-    "burst": 200,
-    "inst": "r5_4xl",
-    "cat": "memory"
+    id: "1200fdac", name: "rosa5-dsp-cp1", type: "classic", az: "multi",
+    nodes: 18, min: 72, steady: 220, burst: 200,
+    inst: "m7i", cat: "general", oh: 1185, atCeiling: false
+  },
+  // rosa1-ct1: dominant pool rosa1-ct1-power-mp-amd (30–90 × r5a.4xlarge)
+  {
+    id: "39395241", name: "rosa1-ct1", type: "classic", az: "multi",
+    nodes: 70, min: 480, steady: 1078, burst: 422,
+    inst: "r5a", cat: "memory", oh: 1185, atCeiling: false
+  },
+  // rosa2-ct1: r5a.2xlarge (3–6) + r5a.4xlarge (0–9) — same $/vCPU/hr
+  {
+    id: "5a406509", name: "rosa2-ct1", type: "classic", az: "multi",
+    nodes: 10, min: 24, steady: 113, burst: 79,
+    inst: "r5a", cat: "memory", oh: 1185, atCeiling: false
+  },
+  // rosa2-cp1: r5a.4xlarge (3–15)
+  {
+    id: "6e9bf97b", name: "rosa2-cp1", type: "classic", az: "multi",
+    nodes: 8, min: 48, steady: 126, burst: 114,
+    inst: "r5a", cat: "memory", oh: 1185, atCeiling: false
+  },
+  // rosa1-cp1: r5a.4xlarge (75–150) + r6i.4xlarge kong (6–12) — blended rate
+  // actual == min: cluster sitting at autoscaler floor; full 1,296 vCPU headroom
+  {
+    id: "eb0ed074", name: "rosa1-cp1", type: "classic", az: "multi",
+    nodes: 81, min: 1296, steady: 1296, burst: 1296,
+    inst: "r5a_r6i4", cat: "memory", oh: 1185, atCeiling: false
+  },
+  // rosa5-dsp-ct1: m7i.xlarge/2xlarge/4xlarge + m6a.4xlarge — blended rate
+  {
+    id: "f3c9fb7b", name: "rosa5-dsp-ct1", type: "classic", az: "multi",
+    nodes: 8, min: 24, steady: 48, burst: 60,
+    inst: "m7i_m6a", cat: "general", oh: 1185, atCeiling: false
+  },
+  // HCP clusters
+  {
+    id: "1622fabf", name: "cxt-ete-1", type: "hcp",
+    nodes: 6, min: 12, steady: 24, burst: 0,
+    inst: "m5_xl", cat: "general", atCeiling: true
   },
   {
-    "id": "b8d7e9f0",
-    "name": "prod-core-2",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 50,
-    "steady": 600,
-    "burst": 200,
-    "inst": "r5_4xl",
-    "cat": "memory"
+    id: "1813eec9", name: "rosa-poc-hcp", type: "hcp",
+    nodes: 8, min: 0, steady: 32, burst: 40,
+    inst: "t3_xl", cat: "general", atCeiling: false
   },
   {
-    "id": "c1d4e5f6",
-    "name": "prod-batch-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 25,
-    "steady": 72,
-    "burst": 128,
-    "inst": "r6i_2xl",
-    "cat": "memory"
+    id: "41e93c98", name: "cxt-prod-1", type: "hcp",
+    nodes: 4, min: 12, steady: 16, burst: 8,
+    inst: "m5_xl", cat: "general", atCeiling: false
   },
+  // ── ap-east-1 (Hong Kong) ───────────────────────────────────────────────
+  // rosa3-cp1: r6i.2xlarge (3–6) — at ceiling (actual=max=48)
   {
-    "id": "d9e0f1a2",
-    "name": "prod-batch-2",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 12,
-    "steady": 96,
-    "burst": 0,
-    "inst": "r6i_2xl",
-    "cat": "memory"
+    id: "b500ee7c", name: "rosa3-cp1 (HK)", type: "classic", az: "multi",
+    nodes: 6, min: 24, steady: 48, burst: 0,
+    inst: "r6i2_hk", cat: "memory", oh: 1185, atCeiling: true
   },
+  // rosa3-ct1: r6i.2xlarge (6–12)
   {
-    "id": "e5f6a7b8",
-    "name": "prod-data-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 7,
-    "steady": 112,
-    "burst": 0,
-    "inst": "r5_4xl",
-    "cat": "memory"
+    id: "ba12a842", name: "rosa3-ct1 (HK)", type: "classic", az: "multi",
+    nodes: 10, min: 48, steady: 80, burst: 16,
+    inst: "r6i2_hk", cat: "memory", oh: 1185, atCeiling: false
   },
-  {
-    "id": "f2a3b4c5",
-    "name": "prod-infra-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 12,
-    "steady": 192,
-    "burst": 0,
-    "inst": "m6i_4xl",
-    "cat": "general"
-  },
-  {
-    "id": "a7b8c9d0",
-    "name": "dev-core-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 10,
-    "steady": 80,
-    "burst": 0,
-    "inst": "m5_2xl",
-    "cat": "general"
-  },
-  {
-    "id": "b4c5d6e7",
-    "name": "dev-batch-1",
-    "type": "classic",
-    "az": "multi",
-    "nodes": 12,
-    "steady": 48,
-    "burst": 0,
-    "inst": "m5xl",
-    "cat": "general"
-  },
-  {
-    "id": "c9d0e1f2",
-    "name": "hcp-prod-1",
-    "type": "hcp",
-    "nodes": 4,
-    "steady": 16,
-    "burst": 0,
-    "inst": "m5xl",
-    "cat": "general"
-  },
-  {
-    "id": "d6e7f8a9",
-    "name": "hcp-dev-1",
-    "type": "hcp",
-    "nodes": 3,
-    "steady": 12,
-    "burst": 0,
-    "inst": "m5xl",
-    "cat": "general"
-  },
-  {
-    "id": "e3f4a5b6",
-    "name": "hcp-poc-1",
-    "type": "hcp",
-    "nodes": 8,
-    "steady": 32,
-    "burst": 0,
-    "inst": "t3xl",
-    "cat": "general"
-  }
 ];
 
-// ── Pricing constants (on-demand $/vCPU/hr, us-east-1) ────────────────────
-// Keys must match the 'inst' field in every CLUSTERS entry above.
-// Add mixed-fleet averages as needed (e.g. r5a_r6i for clusters using both).
+// ── Pricing constants (on-demand $/vCPU/hr) ─────────────────────────────────
+// All rates from AWS Pricing API 2026-06.
+// Blended rates computed from pool composition at autoscaler minimum.
 const EC2 = {
-  "r5_4xl": 0.063,
-  "r6i_2xl": 0.063,
-  "m6i_4xl": 0.048,
-  "m5_2xl": 0.048,
-  "m5xl": 0.048,
-  "t3xl": 0.0416
+  "m7i":       0.0630,  // ap-southeast-1 m7i.* all sizes — uniform $/vCPU/hr
+  "m7i_m6a":   0.0610,  // ap-southeast-1 blend: m7i (majority) + m6a.4xl ($0.0540)
+  "r5a":       0.0680,  // ap-southeast-1 r5a.2xlarge ($0.0680) / r5a.4xlarge ($0.0680)
+  "r5a_r6i4":  0.0686,  // ap-southeast-1 blend: 92.6% r5a.4xl ($0.0680) + 7.4% r6i.4xl ($0.0760)
+  "r6i2_hk":   0.0835,  // ap-east-1 r6i.2xlarge ($0.668/hr ÷ 8 vCPU)
+  "m5_xl":     0.0600,  // ap-southeast-1 m5.xlarge (HCP cxt clusters)
+  "t3_xl":     0.0528,  // ap-southeast-1 t3.xlarge (HCP poc cluster)
 };
 
-// Graviton equivalents: r7g for memory-opt, m7g for general-purpose.
-const ARM_EC2 = {
-  "memory": 0.0567,
-  "general": 0.0408
-};
+// Graviton equivalents (ap-southeast-1): r7g for memory-opt, m7g for general-purpose.
+const ARM_EC2 = { memory: 0.054, general: 0.040 };
 
-const EC2_MULT   = { paygo:1.00, '1yr':0.60, '3yr':0.40 };
-const ROSA_RATE  = { paygo:125.00, '1yr':83.33, '3yr':55.58 }; // per 4-vCPU block/mo
-const EBS_NODE   = 24;               // 300 GB × $0.08/GB-mo
+const EC2_MULT   = { paygo: 1.00, '1yr': 0.60, '3yr': 0.40 };
+const ROSA_RATE  = { paygo: 125.00, '1yr': 83.33, '3yr': 55.58 }; // per 4-vCPU block/mo
+const EBS_NODE   = 26;               // 300 GB × $0.088/GB-mo (ap-southeast-1 and ap-east-1)
 const HCP_FEE    = 182.50;
-const CLASSIC_OH = 980;
+const CLASSIC_OH = 1185;             // multi-AZ, 1yr reserved CP+Infra (both regions)
 const ARM_E      = 1.25;             // Graviton performance multiplier
 const SPOT_MULT  = 0.30;             // Spot ≈ 70% off on-demand
 
 // ── Per-cluster cost ────────────────────────────────────────────────────────
 function calcCluster(c, { contractTerm, ec2Discount, hcpMigrated, karpenter, armPct, spotForBurst, burstUtilPct, burstEC2Discount }) {
   const isHcp   = c.type === 'hcp' || (hcpMigrated && c.type === 'classic');
-  const canKarp = karpenter && isHcp;    // bin-packing only
+  const canKarp = karpenter && isHcp;
   const canSpot = spotForBurst && isHcp;
   const binpack = canKarp ? 0.9 : 1.0;
   const mult    = 1 - (ec2Discount / 100);
   const rRate   = ROSA_RATE[contractTerm];
   const util    = Math.max(0, Math.min(100, burstUtilPct ?? 100)) / 100;
 
-  const effNodes      = Math.round(c.nodes  * binpack);
-  const effSteady     = Math.round(c.steady * binpack);
-  const effBurst      = Math.round(c.burst  * binpack);
-  const effBurstBill  = Math.round(effBurst * util);
+  const effNodes     = Math.round(c.nodes  * binpack);
+  const effSteady    = Math.round(c.steady * binpack);
+  const effBurst     = Math.round(c.burst  * binpack);
+  const effBurstBill = Math.round(effBurst * util);
 
   let ec2Steady = 0;
   let rosaVCPU  = effSteady;
@@ -655,15 +616,18 @@ function calcCluster(c, { contractTerm, ec2Discount, hcpMigrated, karpenter, arm
   const ec2Burst  = effBurstBill * EC2[c.inst] * burstMult * 730;
   const ebs       = effNodes * EBS_NODE;
   const rosaFee   = Math.ceil((rosaVCPU + effBurstBill) / 4) * rRate;
-  const overhead  = isHcp ? HCP_FEE : CLASSIC_OH;
+  const overhead  = isHcp ? HCP_FEE : (c.oh ?? CLASSIC_OH);
 
   return {
     id: c.id, name: c.name, isHcp, canSpot,
+    atCeiling: c.atCeiling ?? false,
+    minVCPU: c.min ?? c.steady,
+    steadyVCPU: effSteady,
     vCPU: effSteady + effBurst,
     burstVCPU: effBurst, burstVCPUBilled: effBurstBill,
     rosaFee,
     ec2Ebs: ec2Steady + ec2Burst + ebs,
-    cpInfra:    isHcp ? null : CLASSIC_OH,
+    cpInfra:    isHcp ? null : (c.oh ?? CLASSIC_OH),
     clusterFee: isHcp ? HCP_FEE : null,
     overhead,
     total: rosaFee + ec2Steady + ec2Burst + ebs + overhead,
@@ -674,11 +638,11 @@ function calcFleet(settings) {
   const rows = CLUSTERS.map(c => calcCluster(c, settings));
   return {
     rows,
-    rosaFee:        rows.reduce((s, r) => s + r.rosaFee,         0),
-    ec2Ebs:         rows.reduce((s, r) => s + r.ec2Ebs,          0),
-    overhead:       rows.reduce((s, r) => s + r.overhead,        0),
-    total:          rows.reduce((s, r) => s + r.total,           0),
-    burstVCPUBilled: rows.reduce((s, r) => s + r.burstVCPUBilled, 0),
+    rosaFee:         rows.reduce((s, r) => s + r.rosaFee,          0),
+    ec2Ebs:          rows.reduce((s, r) => s + r.ec2Ebs,           0),
+    overhead:        rows.reduce((s, r) => s + r.overhead,         0),
+    total:           rows.reduce((s, r) => s + r.total,            0),
+    burstVCPUBilled: rows.reduce((s, r) => s + r.burstVCPUBilled,  0),
     canSpot:         rows.some(r => r.canSpot),
   };
 }
@@ -703,30 +667,23 @@ createApp({
       burstEC2Discount: false,
     });
 
-    // hasHCP: Karpenter, Spot, and ARM available with existing HCP clusters OR after migration
     const hcpClusterCount = CLUSTERS.filter(c => c.type === 'hcp').length;
     const hasHCP = computed(() => s.hcpMigrated || hcpClusterCount > 0);
 
-    // Reset HCP-dependent features when HCP no longer available
     watch(hasHCP, v => {
       if (!v) { s.karpenter = false; s.spotForBurst = false; s.armPct = 0; }
     });
 
-    // Sync EC2 discount to contract term when syncEC2 is on
     watch(() => s.contractTerm, v => { if (s.syncEC2) s.ec2Discount = CONTRACT_EC2_DISC[v]; });
     watch(() => s.syncEC2, v => { if (v) s.ec2Discount = CONTRACT_EC2_DISC[s.contractTerm]; });
 
-    // Spot for burst and burstEC2Discount are mutually exclusive
     watch(() => s.spotForBurst,     v => { if (v) s.burstEC2Discount = false; });
     watch(() => s.burstEC2Discount, v => { if (v) s.spotForBurst = false; });
 
     const fleet = computed(() => calcFleet(s));
 
-    // Baseline: frozen snapshot, initialized on mount, updated by setBaseline()
     const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0, rows: null });
-    function setBaseline() {
-      baselineSnapshot.value = calcFleet(s);
-    }
+    function setBaseline() { baselineSnapshot.value = calcFleet(s); }
 
     const leverSavings = computed(() => {
       const snap = (o) => calcFleet({ ...s, ...o }).total;
@@ -815,10 +772,7 @@ createApp({
       });
     }
 
-    onMounted(() => {
-      buildChart();
-      setBaseline();
-    });
+    onMounted(() => { buildChart(); setBaseline(); });
     watch(s, () => buildChart(), { deep: true });
     watch(baselineSnapshot, () => buildChart());
 

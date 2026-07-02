@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Truck Logistics — ROSA Cost Explorer</title>
+  <script src="https://unpkg.com/vue@3.5.38/dist/vue.global.prod.js"
+          integrity="sha384-KYk+4lWOhWTo/BrM+zKkwLtFsD6cs2ClFbaGiX5ozDVHPqF4nOqxVGiHvcyWsw8B"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+          integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+          crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      color: #151515;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .header {
+      background: #1a1a1a;
+      color: white;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .header h1 { font-size: 1.25rem; font-weight: 700; }
+    .header h1 span { color: #ee0000; }
+    .header-meta { font-size: 0.8rem; color: #999; margin-left: auto; }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .page { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ── Cards ──────────────────────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 1.1rem;
+    }
+
+    /* ── Summary strip ──────────────────────────────────────────────────── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .summary-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .summary-card .s-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+    .summary-card .s-value { font-size: 2rem; font-weight: 800; margin-top: 0.15rem; line-height: 1; }
+    .summary-card .s-sub { font-size: 0.78rem; color: #888; margin-top: 0.25rem; }
+    .saving { color: #3e8635; }
+    .cost-up { color: #c9190b; }
+
+    /* ── Controls ───────────────────────────────────────────────────────── */
+    .ctrl { margin-bottom: 1.4rem; }
+    .ctrl:last-child { margin-bottom: 0; }
+    .ctrl-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .ctrl-hint { font-weight: 400; color: #888; font-size: 0.75rem; }
+
+    /* Radio buttons */
+    .radio-row { display: flex; gap: 0.4rem; }
+    .radio-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 0.15rem; text-align: center; padding: 0.35rem 0.5rem;
+      border: 1.5px solid #d0d0d0; border-radius: 5px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 500;
+      transition: border-color 0.12s, background 0.12s, color 0.12s;
+      user-select: none;
+    }
+    .radio-btn:hover:not(.active) { border-color: #aaa; }
+    .radio-btn.active { background: #ee0000; color: white; border-color: #ee0000; }
+    .chip {
+      display: inline-block; background: #e8f5e9; color: #2e7d32;
+      font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem;
+      border-radius: 999px; white-space: nowrap;
+    }
+    .radio-btn.active .chip { background: rgba(255,255,255,0.25); color: rgba(255,255,255,0.9); }
+
+    /* Toggle switch */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+    .toggle-row .toggle-label { font-size: 0.82rem; color: #444; }
+    .toggle { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #d0d0d0;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked ~ .toggle-track { background: #ee0000; }
+    .toggle input:checked ~ .toggle-track::after { transform: translateX(20px); }
+    .toggle.disabled .toggle-track { opacity: 0.35; cursor: not-allowed; }
+
+    /* Slider */
+    .slider-wrap { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem; }
+    .slider-wrap input[type=range] {
+      flex: 1;
+      accent-color: #ee0000;
+      height: 4px;
+      cursor: pointer;
+    }
+    .slider-wrap input[type=range]:disabled { opacity: 0.35; cursor: not-allowed; }
+    .slider-val { min-width: 2.8rem; text-align: right; font-size: 0.85rem; font-weight: 700; }
+
+    /* ── Divider ────────────────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid #ececec; margin: 1.1rem 0; }
+
+    /* ── Chart ──────────────────────────────────────────────────────────── */
+    .chart-wrap { position: relative; height: 320px; }
+
+    /* ── Cluster table ──────────────────────────────────────────────────── */
+    .cluster-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 1.25rem; }
+    .cluster-table thead th {
+      background: #f7f7f7;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .cluster-table thead th:first-child { text-align: left; }
+    .cluster-table tbody td {
+      padding: 0.45rem 0.75rem;
+      text-align: right;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cluster-table tbody td:first-child { text-align: left; font-weight: 500; }
+    .cluster-table tfoot td {
+      padding: 0.45rem 0.75rem;
+      text-align: right;
+      font-weight: 700;
+      background: #f7f7f7;
+      border-top: 2px solid #e8e8e8;
+    }
+    .cluster-table tfoot td:first-child { text-align: left; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      margin-left: 0.3rem;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    .badge-hcp { background: #def3ff; color: #00538c; }
+    .badge-classic { background: #fff0e0; color: #7d4a00; }
+
+    /* Notes */
+    .note { font-size: 0.72rem; color: #999; margin-top: 1rem; line-height: 1.5; }
+    .note a { color: #0066cc; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <h1><span>Red Truck Logistics</span> — ROSA Cost Explorer</h1>
+    <div class="header-meta">
+      11 clusters &bull; ap-southeast-1 &bull; EC2 from AWS Pricing API 2026-06-24 &bull; ROSA fees 2026-06
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- Summary cards -->
+    <div class="summary">
+      <div class="summary-card">
+        <div class="s-label">Baseline (1-yr, Classic)</div>
+        <div class="s-value">${{ fmt(baseline.total) }}</div>
+        <div class="s-sub">per month &bull; ${{ fmtK(baseline.total * 12) }}/yr</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">Configured</div>
+        <div class="s-value">${{ fmt(fleet.total) }}</div>
+        <div class="s-sub">per month &bull; ${{ fmtK(fleet.total * 12) }}/yr</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">Monthly {{ delta >= 0 ? 'Savings' : 'Increase' }}</div>
+        <div class="s-value" :class="delta >= 0 ? 'saving' : 'cost-up'">
+          {{ delta >= 0 ? '-' : '+' }}${{ fmt(Math.abs(delta)) }}
+        </div>
+        <div class="s-sub" :class="delta >= 0 ? 'saving' : 'cost-up'">
+          {{ Math.abs(deltaPct).toFixed(1) }}% {{ delta >= 0 ? 'less' : 'more' }}
+          &bull; ${{ fmtK(Math.abs(delta) * 12) }}/yr
+        </div>
+      </div>
+    </div>
+    <div class="note" style="text-align: center; margin-top: 0.5rem;">Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.</div>
+
+    <div class="main-grid">
+
+      <!-- ── Controls panel ──────────────────────────────────────────── -->
+      <div class="card">
+        <div class="card-title">Configuration</div>
+
+        <!-- Contract term -->
+        <div class="ctrl">
+          <div class="ctrl-label">Contract Term</div>
+          <div class="radio-row">
+            <div class="radio-btn" :class="{ active: s.contractTerm === 'paygo' }"
+                 @click="s.contractTerm = 'paygo'">PAYGO</div>
+            <div class="radio-btn" :class="{ active: s.contractTerm === '1yr' }"
+                 @click="s.contractTerm = '1yr'">
+              1-Year
+              <span class="chip">−${{ fmt(leverSavings.term1yr) }}/mo</span>
+            </div>
+            <div class="radio-btn" :class="{ active: s.contractTerm === '3yr' }"
+                 @click="s.contractTerm = '3yr'">
+              3-Year
+              <span class="chip">−${{ fmt(leverSavings.term3yr) }}/mo</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- HCP migration -->
+        <div class="ctrl">
+          <div class="ctrl-label">
+            Classic → HCP Migration
+            <span v-if="leverSavings.hcp > 0" class="chip">−${{ fmt(leverSavings.hcp) }}/mo</span>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Migrate all 8 Classic clusters</span>
+            <label class="toggle" :class="{ disabled: false }">
+              <input type="checkbox" v-model="s.hcpMigrated">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Karpenter -->
+        <div class="ctrl">
+          <div class="ctrl-label">
+            Karpenter
+            <span class="ctrl-hint">(requires HCP)</span>
+            <span v-if="leverSavings.karpenter > 0 && s.hcpMigrated" class="chip">−${{ fmt(leverSavings.karpenter) }}/mo</span>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label" :style="{ opacity: s.hcpMigrated ? 1 : 0.4 }">
+              Bin-packing + Spot burst
+            </span>
+            <label class="toggle" :class="{ disabled: !s.hcpMigrated }">
+              <input type="checkbox" v-model="s.karpenter" :disabled="!s.hcpMigrated">
+              <div class="toggle-track"></div>
+            </label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ARM % -->
+        <div class="ctrl">
+          <div class="ctrl-label">
+            ARM Graviton Target
+            <span class="ctrl-hint">(Memory Opt, HCP only)</span>
+            <span v-if="leverSavings.arm > 0 && s.hcpMigrated && s.armPct > 0" class="chip">−${{ fmt(leverSavings.arm) }}/mo</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" min="0" max="100" step="5"
+                   v-model.number="s.armPct"
+                   :disabled="!s.hcpMigrated">
+            <span class="slider-val" :style="{ opacity: s.hcpMigrated ? 1 : 0.4 }">
+              {{ s.armPct }}%
+            </span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- What's active -->
+        <div style="font-size:0.78rem; color:#555; line-height:1.6;">
+          <div v-if="s.contractTerm === 'paygo'">⚠ PAYGO: no reserved discounts</div>
+          <div v-if="s.contractTerm === '1yr'">✓ 1-yr EC2 reserved (0.60× OD)</div>
+          <div v-if="s.contractTerm === '3yr'">✓ 3-yr EC2 reserved (0.40× OD)</div>
+          <div v-if="s.hcpMigrated">✓ HCP: CP/Infra eliminated, $183/cluster fee</div>
+          <div v-if="s.karpenter">✓ Karpenter: 10% bin-packing, Spot burst (0.30× OD)</div>
+          <div v-if="s.armPct > 0 && s.hcpMigrated">
+            ✓ ARM: {{ s.armPct }}% Memory Opt → r7g (E=1.25 multiplier)
+          </div>
+          <div v-if="!s.hcpMigrated && (s.armPct > 0 || s.karpenter)"
+               style="color:#c9190b">
+            ⚠ Karpenter + ARM require HCP migration
+          </div>
+        </div>
+
+        <div class="note">
+          EC2 rates: ap-southeast-1 on-demand from AWS Pricing API.
+          Reserved: 1-yr 0.60×, 3-yr 0.40× OD.
+          ARM E=1.25 performance multiplier applied to node count.
+          EBS: 300 GB gp3 × $0.08/GB-mo per node.
+          ROSA: $125/$83.33/$55.58 per 4-vCPU block/mo (PAYGO/1yr/3yr).
+        </div>
+      </div>
+
+      <!-- ── Right column: chart + table ────────────────────────────── -->
+      <div>
+        <div class="card">
+          <div class="chart-wrap">
+            <canvas ref="chartEl"></canvas>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 1.25rem;">
+          <div class="card-title">Per-Cluster Breakdown — Configured</div>
+          <table class="cluster-table">
+            <thead>
+              <tr>
+                <th>Cluster</th>
+                <th>vCPU</th>
+                <th>ROSA Fee</th>
+                <th>EC2 + EBS</th>
+                <th>CP / Infra</th>
+                <th>Cluster Fee</th>
+                <th>Baseline / mo</th>
+                <th>Total / mo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(r, idx) in fleet.rows" :key="r.id">
+                <td>
+                  {{ r.name }}
+                  <span class="badge" :class="r.isHcp ? 'badge-hcp' : 'badge-classic'">
+                    {{ r.isHcp ? 'HCP' : 'Classic' }}
+                  </span>
+                </td>
+                <td style="white-space:nowrap">{{ r.minVCPU }} / <strong>{{ r.steadyVCPU }}</strong> / {{ r.vCPU }}</td>
+                <td>${{ fmt(r.rosaFee) }}</td>
+                <td>${{ fmt(r.ec2Ebs) }}</td>
+                <td>{{ r.cpInfra != null ? '$' + fmt(r.cpInfra) : '—' }}</td>
+                <td>{{ r.clusterFee != null ? '$' + fmt(r.clusterFee) : '—' }}</td>
+                <td>${{ fmt(baseline.rows[idx].total) }}</td>
+                <td><strong>${{ fmt(r.total) }}</strong></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Fleet Total</td>
+                <td style="white-space:nowrap">{{ fleet.rows.reduce((s,r) => s+r.minVCPU, 0) }} / <strong>{{ fleet.rows.reduce((s,r) => s+r.steadyVCPU, 0) }}</strong> / {{ fleet.rows.reduce((s,r) => s+r.vCPU, 0) }}</td>
+                <td>${{ fmt(fleet.rosaFee) }}</td>
+                <td>${{ fmt(fleet.ec2Ebs) }}</td>
+                <td>${{ fmt(fleet.rows.reduce((s,r) => s + (r.cpInfra ?? 0), 0)) }}</td>
+                <td>${{ fmt(fleet.rows.reduce((s,r) => s + (r.clusterFee ?? 0), 0)) }}</td>
+                <td>${{ fmt(baseline.total) }}</td>
+                <td>${{ fmt(fleet.total) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="note">
+            vCPU column shows min / <strong>actual</strong> / max (autoscaler floor / telemetry snapshot / ceiling).
+            Costs are a <em>best-effort estimation representative of typical spend — not an authoritative bill</em>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
+
+// ── Fleet data ──────────────────────────────────────────────────────────────
+// steadyVCPU = autoscaling min; burstVCPU = max − min
+const CLUSTERS = [
+  { id:'rosa1-cp1',    name:'rosa1-cp1',    type:'classic', az:'multi', vCPU:1296, nodes:87, inst:'r5a_r6i', cat:'memory',  steady:1296, burst:0 },
+  { id:'rosa1-ct1',    name:'rosa1-ct1',    type:'classic', az:'multi', vCPU:816,  nodes:58, inst:'r5a',     cat:'memory',  steady:576,  burst:240 },
+  { id:'rosa2-cp1',    name:'rosa2-cp1',    type:'classic', az:'multi', vCPU:112,  nodes:13, inst:'r5a',     cat:'memory',  steady:112,  burst:0 },
+  { id:'rosa2-ct1',    name:'rosa2-ct1',    type:'classic', az:'multi', vCPU:104,  nodes:14, inst:'r5a',     cat:'memory',  steady:104,  burst:0 },
+  { id:'rosa3-cp1',    name:'rosa3-cp1',    type:'classic', az:'multi', vCPU:48,   nodes:12, inst:'r6i',     cat:'memory',  steady:48,   burst:0 },
+  { id:'rosa3-ct1',    name:'rosa3-ct1',    type:'classic', az:'multi', vCPU:80,   nodes:16, inst:'r6i',     cat:'memory',  steady:80,   burst:0 },
+  { id:'rosa5-cp1',    name:'rosa5-cp1',    type:'classic', az:'multi', vCPU:220,  nodes:22, inst:'m7i',     cat:'general', steady:220,  burst:0 },
+  { id:'rosa5-ct1',    name:'rosa5-ct1',    type:'classic', az:'multi', vCPU:36,   nodes:15, inst:'m7i',     cat:'general', steady:36,   burst:0 },
+  { id:'cxt-ete-1',   name:'cxt-ete-1',   type:'hcp',     vCPU:12,   nodes:3,  inst:'m5',      cat:'general', steady:12,   burst:0 },
+  { id:'cxt-prod-1',  name:'cxt-prod-1',  type:'hcp',     vCPU:16,   nodes:4,  inst:'m5',      cat:'general', steady:16,   burst:0 },
+  { id:'rosa-poc-hcp', name:'rosa-poc-hcp', type:'hcp',   vCPU:32,   nodes:8,  inst:'t3',      cat:'general', steady:32,   burst:0 },
+];
+
+// ── Pricing constants (ap-southeast-1, on-demand $/vCPU/hr) ────────────────
+const EC2 = { r5a:0.0680, r6i:0.0760, r5a_r6i:0.0720, m7i:0.0630, m5:0.0600, t3:0.0528 };
+const ARM_EC2 = { memory:0.0646, general:0.0510 }; // r7g / m7g
+const EC2_MULT  = { paygo:1.00, '1yr':0.60, '3yr':0.40 };
+const ROSA_RATE = { paygo:125.00, '1yr':83.33, '3yr':55.58 }; // per 4-vCPU block/mo
+const EBS_NODE  = 24;    // 300 GB × $0.08/GB-mo
+const HCP_FEE   = 182.50;
+const CLASSIC_OH = 1175;
+const ARM_E     = 1.25;  // Graviton performance multiplier
+const SPOT_MULT = 0.30;  // Spot ≈ 70% off on-demand
+
+// ── Per-cluster cost ────────────────────────────────────────────────────────
+function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct }) {
+  const isHcp   = c.type === 'hcp' || (hcpMigrated && c.type === 'classic');
+  const canKarp = karpenter && isHcp;
+  const binpack = canKarp ? 0.9 : 1.0;
+  const mult    = EC2_MULT[contractTerm];
+  const rRate   = ROSA_RATE[contractTerm];
+
+  const effNodes  = Math.round(c.nodes  * binpack);
+  const effSteady = Math.round(c.steady * binpack);
+  const effBurst  = Math.round(c.burst  * binpack);
+
+  // ARM migration (memory-opt clusters, HCP required)
+  let ec2Steady = 0;
+  let rosaVCPU  = effSteady + effBurst;
+
+  if (c.cat === 'memory' && armPct > 0 && isHcp) {
+    const toMigrate = effSteady * (armPct / 100);
+    const armVCPU   = Math.round(toMigrate / ARM_E);
+    const x86VCPU   = effSteady - Math.round(toMigrate);
+    ec2Steady = (armVCPU * ARM_EC2.memory + x86VCPU * EC2[c.inst]) * mult * 730;
+    rosaVCPU  = armVCPU + x86VCPU + effBurst;
+  } else {
+    ec2Steady = effSteady * EC2[c.inst] * mult * 730;
+  }
+
+  const burstMult = canKarp ? SPOT_MULT : mult;
+  const ec2Burst  = effBurst * EC2[c.inst] * burstMult * 730;
+  const ebs       = effNodes * EBS_NODE;
+  const rosaFee   = Math.ceil(rosaVCPU / 4) * rRate;
+  const overhead  = isHcp ? HCP_FEE : CLASSIC_OH;
+
+  return {
+    id: c.id, name: c.name, isHcp,
+    minVCPU: c.steady,
+    steadyVCPU: effSteady,
+    vCPU: effSteady + effBurst,
+    rosaFee,
+    ec2Ebs: ec2Steady + ec2Burst + ebs,
+    cpInfra:     isHcp ? null : CLASSIC_OH,
+    clusterFee:  isHcp ? HCP_FEE : null,
+    overhead,
+    total: rosaFee + ec2Steady + ec2Burst + ebs + overhead,
+  };
+}
+
+function calcFleet(settings) {
+  const rows = CLUSTERS.map(c => calcCluster(c, settings));
+  return {
+    rows,
+    rosaFee:  rows.reduce((s, r) => s + r.rosaFee,  0),
+    ec2Ebs:   rows.reduce((s, r) => s + r.ec2Ebs,   0),
+    overhead: rows.reduce((s, r) => s + r.overhead,  0),
+    total:    rows.reduce((s, r) => s + r.total,     0),
+  };
+}
+
+const BASELINE_SETTINGS = { contractTerm:'1yr', hcpMigrated:false, karpenter:false, armPct:0 };
+
+// ── Vue app ─────────────────────────────────────────────────────────────────
+createApp({
+  setup() {
+    const chartEl = ref(null);
+    let chart = null;
+
+    const s = reactive({
+      contractTerm: '1yr',
+      hcpMigrated:  false,
+      karpenter:    false,
+      armPct:       0,
+    });
+
+    // Reset karpenter / ARM when HCP is turned off
+    watch(() => s.hcpMigrated, v => {
+      if (!v) { s.karpenter = false; s.armPct = 0; }
+    });
+
+    const baseline = computed(() => calcFleet(BASELINE_SETTINGS));
+    const fleet    = computed(() => calcFleet(s));
+    const delta    = computed(() => baseline.value.total - fleet.value.total);
+    const deltaPct = computed(() => (delta.value / baseline.value.total) * 100);
+
+    const leverSavings = computed(() => {
+      const snap = (o) => calcFleet({ ...s, ...o }).total;
+      const a0 = { armPct: 0 }; // hold ARM neutral so each chip is independent
+      const paygoBase = snap({ contractTerm: 'paygo', ...a0 });
+      return {
+        term1yr:   paygoBase - snap({ contractTerm: '1yr',  ...a0 }),
+        term3yr:   paygoBase - snap({ contractTerm: '3yr',  ...a0 }),
+        hcp:       snap({ hcpMigrated: false, karpenter: false, ...a0 }) - snap({ hcpMigrated: true, karpenter: false, ...a0 }),
+        karpenter: snap({ karpenter: false, ...a0 }) - snap({ karpenter: true, ...a0 }),
+        arm:       snap({ armPct: 0 }) - snap({}),
+      };
+    });
+
+    function buildChart() {
+      if (!chartEl.value) return;
+      const b = baseline.value;
+      const f = fleet.value;
+      if (chart) chart.destroy();
+      chart = new Chart(chartEl.value.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Baseline (1-yr, Classic)', 'Configured'],
+          datasets: [
+            {
+              label: 'ROSA Worker Fee',
+              data: [b.rosaFee, f.rosaFee],
+              backgroundColor: ['#f5c6c6', '#ee0000'],
+              borderRadius: 3,
+            },
+            {
+              label: 'EC2 + EBS',
+              data: [b.ec2Ebs, f.ec2Ebs],
+              backgroundColor: ['#c0d8f5', '#0066cc'],
+              borderRadius: 3,
+            },
+            {
+              label: 'Overhead (CP/Infra or HCP fee)',
+              data: [b.overhead, f.overhead],
+              backgroundColor: ['#e0e0e0', '#8a8d90'],
+              borderRadius: 3,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 12 }, padding: 16, usePointStyle: true },
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.dataset.label}: $${Math.round(ctx.parsed.y).toLocaleString()}/mo`,
+                afterBody: items => {
+                  const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                  return ['', `  Total: $${Math.round(total).toLocaleString()}/mo`];
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { font: { size: 12 } },
+              grid: { display: false },
+            },
+            y: {
+              stacked: true,
+              ticks: {
+                callback: v => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v),
+                font: { size: 11 },
+              },
+              grid: { color: '#f0f0f0' },
+            },
+          },
+        },
+      });
+    }
+
+    onMounted(() => buildChart());
+    watch(s, () => buildChart(), { deep: true });
+
+    const fmt  = n => Math.round(n).toLocaleString();
+    const fmtK = n => {
+      if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      return Math.round(n / 1000) + 'K';
+    };
+
+    return { s, baseline, fleet, delta, deltaPct, leverSavings, chartEl, fmt, fmtK };
+  },
+}).mount('#app');
+</script>
+</body>
+</html>
