@@ -32,6 +32,20 @@
     .header h1 { font-size: 1.25rem; font-weight: 700; }
     .header h1 span { color: #ee0000; }
     .header-meta { font-size: 0.8rem; color: #999; margin-left: auto; }
+    .share-btn {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #ccc;
+      background: none;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 0.3rem 0.75rem;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .share-btn:hover { border-color: #aaa; color: white; }
 
     .page { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
     .main-grid {
@@ -218,6 +232,7 @@
     <div class="header-meta">
       11 clusters &bull; us-east-1 &bull; EC2 from AWS Pricing API 2026-06 &bull; ROSA fees 2026-06
     </div>
+    <button class="share-btn" @click="openPublicApp()">&#8599; Share</button>
   </div>
 
   <div class="page">
@@ -683,6 +698,80 @@ function calcFleet(settings) {
   };
 }
 
+// ── Share link ───────────────────────────────────────────────────────────────
+const SHARE_PACK = {
+  singleAZClusters:'sa', multiAZClusters:'ma', hcpClusters:'hc',
+  generalVCPU:'gv', memoryVCPU:'mv', computeVCPU:'cv',
+  burstVCPU:'bv', burstProfile:'bp', burstAwsDiscount:'bd',
+  burstUsagePct:'bu', avgVCPUPerNode:'vn',
+  rateGeneral:'rg', rateMemory:'rm', rateCompute:'rc',
+  rosaContract:'rcn', awsDiscountPct:'ad',
+  hcpMigrated:'hm', karpenter:'kp', burstSpot:'bs', armPct:'ap',
+};
+const SHARE_BOOLS = new Set(['burstAwsDiscount','hcpMigrated','karpenter','burstSpot']);
+
+function buildShareCfg(settings) {
+  const classic = CLUSTERS.filter(c => c.type === 'classic');
+  const hcp     = CLUSTERS.filter(c => c.type === 'hcp');
+
+  const sumSteady = (cat) =>
+    CLUSTERS.filter(c => c.cat === cat).reduce((s, c) => s + c.steady, 0);
+
+  const burstByCat = (cat) =>
+    CLUSTERS.filter(c => c.cat === cat).reduce((s, c) => s + c.burst, 0);
+
+  const totalBurst = CLUSTERS.reduce((s, c) => s + c.burst, 0);
+
+  const burstProfile = (() => {
+    if (!totalBurst) return 'general';
+    const g = burstByCat('general'), m = burstByCat('memory'), co = burstByCat('compute');
+    if (m >= g && m >= co) return 'memory';
+    if (co >= g && co >= m) return 'compute';
+    return 'general';
+  })();
+
+  const weightedRate = (cat, fallback) => {
+    const cs = CLUSTERS.filter(c => c.cat === cat);
+    const totalVCPU = cs.reduce((s, c) => s + c.steady, 0);
+    if (!totalVCPU) return fallback;
+    return parseFloat((cs.reduce((s, c) => s + c.steady * EC2[c.inst], 0) / totalVCPU).toFixed(4));
+  };
+
+  const totalVCPU  = CLUSTERS.reduce((s, c) => s + c.steady, 0);
+  const totalNodes = CLUSTERS.reduce((s, c) => s + c.nodes,  0);
+
+  return {
+    singleAZClusters: classic.filter(c => c.az === 'single').length,
+    multiAZClusters:  classic.filter(c => c.az !== 'single').length,
+    hcpClusters:      hcp.length,
+    generalVCPU:      sumSteady('general'),
+    memoryVCPU:       sumSteady('memory'),
+    computeVCPU:      sumSteady('compute'),
+    burstVCPU:        totalBurst,
+    burstProfile,
+    burstAwsDiscount: settings.burstEC2Discount,
+    burstUsagePct:    settings.burstUtilPct,
+    avgVCPUPerNode:   totalNodes > 0 ? Math.round(totalVCPU / totalNodes) : 8,
+    rateGeneral:      weightedRate('general', 0.048),
+    rateMemory:       weightedRate('memory',  0.063),
+    rateCompute:      weightedRate('compute', 0.043),
+    rosaContract:     settings.contractTerm,
+    awsDiscountPct:   settings.ec2Discount,
+    hcpMigrated:      settings.hcpMigrated,
+    karpenter:        settings.karpenter,
+    burstSpot:        settings.spotForBurst,
+    armPct:           settings.armPct,
+  };
+}
+
+function packCfg(cfg) {
+  const out = {};
+  for (const [k, short] of Object.entries(SHARE_PACK)) {
+    out[short] = SHARE_BOOLS.has(k) ? (cfg[k] ? 1 : 0) : cfg[k];
+  }
+  return out;
+}
+
 // ── Vue app ─────────────────────────────────────────────────────────────────
 createApp({
   setup() {
@@ -724,8 +813,10 @@ createApp({
 
     // Baseline: frozen snapshot, initialized on mount, updated by setBaseline()
     const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0, rows: null });
+    const baselineSettings = ref(null);
     function setBaseline() {
       baselineSnapshot.value = calcFleet(s);
+      baselineSettings.value = { ...s };
     }
 
     const leverSavings = computed(() => {
@@ -828,7 +919,28 @@ createApp({
       return Math.round(n / 1000) + 'K';
     };
 
-    return { s, hasHCP, fleet, baselineSnapshot, leverSavings, delta, deltaPct, chartEl, fmt, fmtK, setBaseline };
+    function openPublicApp() {
+      const curr     = buildShareCfg(s);
+      const baseline = buildShareCfg(baselineSettings.value);
+      const packedC  = packCfg(curr);
+      const packedB  = packCfg(baseline);
+
+      const payload = { v: 1, c: packedC, s: s.syncEC2 ? 1 : 0 };
+      if (JSON.stringify(packedB) !== JSON.stringify(packedC)) {
+        payload.b = packedB;
+      }
+
+      const json    = JSON.stringify(payload);
+      const encoded = btoa(unescape(encodeURIComponent(json)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+      window.open(
+        `https://cloud.redhat.com/experts/rosa/cost-explorer/#s=${encoded}`,
+        '_blank'
+      );
+    }
+
+    return { s, hasHCP, fleet, baselineSnapshot, leverSavings, delta, deltaPct, chartEl, fmt, fmtK, setBaseline, openPublicApp };
   },
 }).mount('#app');
 </script>
