@@ -509,7 +509,7 @@ function calcFleet(settings) {
   };
 }
 
-const BASELINE_SETTINGS = { contractTerm:'1yr', hcpMigrated:false, karpenter:false, armPct:0 };
+const BASELINE_SETTINGS = { contractTerm:'1yr', ec2Discount:40, syncEC2:true, hcpMigrated:false, karpenter:false, armPct:0, spotForBurst:false, burstUtilPct:20, burstEC2Discount:false };
 
 // ── Share link ───────────────────────────────────────────────────────────────
 const SHARE_PACK = {
@@ -592,10 +592,15 @@ createApp({
     let chart = null;
 
     const s = reactive({
-      contractTerm: '1yr',
-      hcpMigrated:  false,
-      karpenter:    false,
-      armPct:       0,
+      contractTerm:     '1yr',
+      ec2Discount:      40,
+      syncEC2:          true,
+      hcpMigrated:      false,
+      karpenter:        false,
+      armPct:           0,
+      spotForBurst:     false,
+      burstUtilPct:     20,
+      burstEC2Discount: false,
     });
 
     // Reset karpenter / ARM when HCP is turned off
