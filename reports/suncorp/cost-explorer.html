@@ -768,22 +768,22 @@ createApp({
 
     const leverSavings = computed(() => {
       const snap = (o) => calcFleet({ ...s, ...o }).total;
-      const curr = fleet.value.total;
-      const paygoBase = snap({ contractTerm: 'paygo', ec2Discount: s.syncEC2 ? 0 : s.ec2Discount });
+      const a0 = { armPct: 0 };
+      const paygoBase = snap({ contractTerm: 'paygo', ec2Discount: s.syncEC2 ? 0 : s.ec2Discount, ...a0 });
       return {
-        term1yr:   paygoBase - snap({ contractTerm: '1yr', ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['1yr'] : s.ec2Discount }),
-        term3yr:   paygoBase - snap({ contractTerm: '3yr', ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['3yr'] : s.ec2Discount }),
-        ec2:       snap({ ec2Discount: 0 }) - curr,
-        burstDisc: snap({ burstEC2Discount: false }) - snap({ burstEC2Discount: true }),
-        hcp:       snap({ hcpMigrated: false })  - snap({ hcpMigrated: true }),
-        karpenter: snap({ karpenter: false })    - snap({ karpenter: true }),
+        term1yr:   paygoBase - snap({ contractTerm: '1yr', ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['1yr'] : s.ec2Discount, ...a0 }),
+        term3yr:   paygoBase - snap({ contractTerm: '3yr', ec2Discount: s.syncEC2 ? CONTRACT_EC2_DISC['3yr'] : s.ec2Discount, ...a0 }),
+        ec2:       snap({ ec2Discount: 0, ...a0 }) - snap({ ...a0 }),
+        burstDisc: snap({ burstEC2Discount: false, ...a0 }) - snap({ burstEC2Discount: true, ...a0 }),
+        hcp:       snap({ hcpMigrated: false, karpenter: false, ...a0 }) - snap({ hcpMigrated: true, karpenter: false, ...a0 }),
+        karpenter: snap({ karpenter: false, ...a0 }) - snap({ karpenter: true, ...a0 }),
         spot:      snap({ spotForBurst: false }) - snap({ spotForBurst: true }),
-        arm:       snap({ armPct: 0 }) - curr,
+        arm:       snap({ armPct: 0 }) - snap({}),
       };
     });
 
     // Baseline: frozen snapshot, initialized on mount, updated by setBaseline()
-    const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0 });
+    const baselineSnapshot = ref({ total: 0, rosaFee: 0, ec2Ebs: 0, overhead: 0, rows: null });
     const baselineSettings = ref(null);
     function setBaseline() {
       baselineSnapshot.value = calcFleet(s);
