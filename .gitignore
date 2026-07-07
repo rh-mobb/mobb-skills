@@ -1,4 +1,16 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Claude Code session files
+.claude/
+
+# Superpowers scratch
 .superpowers/
+
+# Reports (only example is tracked)
 reports/*
 !reports/example/
+
+# Local references
 references/
