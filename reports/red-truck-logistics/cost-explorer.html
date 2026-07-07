@@ -448,17 +448,17 @@ const EC2_MULT  = { paygo:1.00, '1yr':0.60, '3yr':0.40 };
 const ROSA_RATE = { paygo:125.00, '1yr':83.33, '3yr':55.58 }; // per 4-vCPU block/mo
 const EBS_NODE  = 24;    // 300 GB × $0.08/GB-mo
 const HCP_FEE   = 182.50;
-const CLASSIC_OH = 1175;
+const CLASSIC_OH = 1540; // paygo base: 3 CP (m-xlarge) + 3 infra (r-xlarge) EC2+EBS; discounted by mult
 const ARM_E     = 1.25;  // Graviton performance multiplier
 const SPOT_MULT = 0.30;  // Spot ≈ 70% off on-demand
 
 // ── Per-cluster cost ────────────────────────────────────────────────────────
-function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct, burstUtilPct, burstEC2Discount, spotForBurst }) {
+function calcCluster(c, { contractTerm, ec2Discount, hcpMigrated, karpenter, armPct, burstUtilPct, burstEC2Discount, spotForBurst }) {
   const isHcp   = c.type === 'hcp' || (hcpMigrated && c.type === 'classic');
   const canKarp = karpenter && isHcp;
   const canSpot = spotForBurst && canKarp;
   const binpack = canKarp ? 0.9 : 1.0;
-  const mult    = EC2_MULT[contractTerm];
+  const mult    = 1 - (ec2Discount / 100);
   const rRate   = ROSA_RATE[contractTerm];
   const util    = Math.max(0, Math.min(100, burstUtilPct ?? 100)) / 100;
 
@@ -485,7 +485,7 @@ function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct, burstUti
   const ec2Burst  = effBurstBill * EC2[c.inst] * burstMult * 730;
   const ebs       = effNodes * EBS_NODE;
   const rosaFee   = Math.ceil((rosaVCPU + effBurstBill) / 4) * rRate;
-  const overhead  = isHcp ? HCP_FEE : CLASSIC_OH;
+  const overhead  = isHcp ? HCP_FEE : CLASSIC_OH * mult;
 
   return {
     id: c.id, name: c.name, isHcp,
@@ -495,7 +495,7 @@ function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct, burstUti
     burstVCPU: effBurst, burstVCPUBilled: effBurstBill,
     rosaFee,
     ec2Ebs: ec2Steady + ec2Burst + ebs,
-    cpInfra:     isHcp ? null : CLASSIC_OH,
+    cpInfra:     isHcp ? null : CLASSIC_OH * mult,
     clusterFee:  isHcp ? HCP_FEE : null,
     overhead,
     total: rosaFee + ec2Steady + ec2Burst + ebs + overhead,
