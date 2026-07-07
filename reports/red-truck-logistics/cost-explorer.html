@@ -453,35 +453,38 @@ const ARM_E     = 1.25;  // Graviton performance multiplier
 const SPOT_MULT = 0.30;  // Spot ≈ 70% off on-demand
 
 // ── Per-cluster cost ────────────────────────────────────────────────────────
-function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct }) {
+function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct, burstUtilPct, burstEC2Discount, spotForBurst }) {
   const isHcp   = c.type === 'hcp' || (hcpMigrated && c.type === 'classic');
   const canKarp = karpenter && isHcp;
+  const canSpot = spotForBurst && canKarp;
   const binpack = canKarp ? 0.9 : 1.0;
   const mult    = EC2_MULT[contractTerm];
   const rRate   = ROSA_RATE[contractTerm];
+  const util    = Math.max(0, Math.min(100, burstUtilPct ?? 100)) / 100;
 
-  const effNodes  = Math.round(c.nodes  * binpack);
-  const effSteady = Math.round(c.steady * binpack);
-  const effBurst  = Math.round(c.burst  * binpack);
+  const effNodes     = Math.round(c.nodes  * binpack);
+  const effSteady    = Math.round(c.steady * binpack);
+  const effBurst     = Math.round(c.burst  * binpack);
+  const effBurstBill = Math.round(effBurst * util);
 
   // ARM migration (memory-opt clusters, HCP required)
   let ec2Steady = 0;
-  let rosaVCPU  = effSteady + effBurst;
+  let rosaVCPU  = effSteady;
 
   if (c.cat === 'memory' && armPct > 0 && isHcp) {
     const toMigrate = effSteady * (armPct / 100);
     const armVCPU   = Math.round(toMigrate / ARM_E);
     const x86VCPU   = effSteady - Math.round(toMigrate);
     ec2Steady = (armVCPU * ARM_EC2.memory + x86VCPU * EC2[c.inst]) * mult * 730;
-    rosaVCPU  = armVCPU + x86VCPU + effBurst;
+    rosaVCPU  = armVCPU + x86VCPU;
   } else {
     ec2Steady = effSteady * EC2[c.inst] * mult * 730;
   }
 
-  const burstMult = canKarp ? SPOT_MULT : mult;
-  const ec2Burst  = effBurst * EC2[c.inst] * burstMult * 730;
+  const burstMult = canSpot ? SPOT_MULT : (burstEC2Discount ? mult : 1.0);
+  const ec2Burst  = effBurstBill * EC2[c.inst] * burstMult * 730;
   const ebs       = effNodes * EBS_NODE;
-  const rosaFee   = Math.ceil(rosaVCPU / 4) * rRate;
+  const rosaFee   = Math.ceil((rosaVCPU + effBurstBill) / 4) * rRate;
   const overhead  = isHcp ? HCP_FEE : CLASSIC_OH;
 
   return {
@@ -489,6 +492,7 @@ function calcCluster(c, { contractTerm, hcpMigrated, karpenter, armPct }) {
     minVCPU: c.steady,
     steadyVCPU: effSteady,
     vCPU: effSteady + effBurst,
+    burstVCPU: effBurst, burstVCPUBilled: effBurstBill,
     rosaFee,
     ec2Ebs: ec2Steady + ec2Burst + ebs,
     cpInfra:     isHcp ? null : CLASSIC_OH,
