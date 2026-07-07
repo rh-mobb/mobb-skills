@@ -174,32 +174,57 @@ PRODUCT=$(echo "$CLUSTER_JSON" | jq -r '.product.id')
 
 All resource subcommands take `--cluster <NAME|ID>`:
 
+### Internal vs external cluster ID — IMPORTANT
+
+The `/clusters_mgmt/v1/clusters/<ID>/...` API path requires the **internal OCM ID** — an
+opaque alphanumeric string (e.g. `1l5o4lkqqv7qab54gt6imbr225m57efl`). This is **not** the
+external UUID shown in `ocm list clusters` output (e.g. `39395241-xxxx-xxxx-xxxx-xxxxxxxxxxxx`).
+
+Passing the external UUID to the API path returns an empty result with no error — it looks
+like a permissions problem but is simply the wrong ID. Always resolve the internal ID first:
+
 ```bash
-# Machine pools (Classic clusters only) — use raw API for JSON output
-# ocm list machinepool does not support --json; use the API path instead.
-# INTERNAL_ID comes from: ocm describe cluster <ID> --json | jq -r '.id'
-ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools
+# Step 1: resolve internal ID (required before any /clusters/<ID>/... API call)
+INTERNAL_ID=$(ocm describe cluster <NAME_OR_EXTERNAL_ID> --json | jq -r '.id')
+
+# Step 2: use internal ID in API path
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/machine_pools
+```
+
+The `ocm list machinepools --cluster <name>` CLI command does this resolution automatically
+(searches subscriptions by name/external_id, then fetches by internal ID). Use it when you
+don't need JSON output; use the raw API when you do.
+
+```bash
+# Machine pools (Classic clusters only)
+# CLI — works with name or external ID, no --json support:
+ocm list machinepools --cluster <NAME|EXTERNAL_ID>
+
+# API — JSON output, requires internal ID (see above):
+INTERNAL_ID=$(ocm describe cluster <NAME> --json | jq -r '.id')
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/machine_pools
 
 # Parse summary (id, instance_type, replicas/autoscaling range):
-ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/machine_pools | \
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/machine_pools | \
   jq -r '.items[] | [.id, .instance_type,
     (if .autoscaling then "\(.autoscaling.min_replicas)-\(.autoscaling.max_replicas)"
      else (.replicas | tostring) end)] | @tsv'
 
 # Mutating operations (still use the ocm subcommand):
-ocm create machinepool --cluster <CLUSTER_ID> --instance-type=m5.xlarge --replicas=3
-ocm edit machinepool --cluster <CLUSTER_ID> <POOL_ID> --replicas=5
+ocm create machinepool --cluster <NAME> --instance-type=m5.xlarge --replicas=3
+ocm edit machinepool --cluster <NAME> <POOL_ID> --replicas=5
 
 # Node pools (HCP clusters only)
-# ocm list nodepool does not support --cluster; use the raw API with the internal OCM ID.
-# INTERNAL_ID comes from: ocm describe cluster <ID> --json | jq -r '.id'
-ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools
-ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools/<POOL_ID>
+# ocm list nodepool does not support --cluster; raw API required.
+# Requires internal ID (see above).
+INTERNAL_ID=$(ocm describe cluster <NAME> --json | jq -r '.id')
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/node_pools
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/node_pools/<POOL_ID>
 
 # Parse node pool summary (id, instance_type, replicas/autoscaling, AZ):
 # Note: autoscaling fields are min_replica/max_replica (singular) for node pools,
 #       vs min_replicas/max_replicas (plural) for machine pools.
-ocm get /api/clusters_mgmt/v1/clusters/<INTERNAL_ID>/node_pools | \
+ocm get /api/clusters_mgmt/v1/clusters/$INTERNAL_ID/node_pools | \
   jq -r '.items[] | [.id, .aws_node_pool.instance_type,
     (if .autoscaling then "\(.autoscaling.min_replica)-\(.autoscaling.max_replica)"
      else (.replicas | tostring) end),
