@@ -14,3 +14,6 @@ reports/*
 
 # Local references
 references/
+
+# VS Code Local History extension
+.history/
