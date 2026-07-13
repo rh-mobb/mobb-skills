@@ -1,15 +1,23 @@
 ---
 name: rosa-cost
 description: |
-  Pricing data, calculation methodology, and output templates for ROSA cost estimation.
+  Two-phase advisory skill for ROSA cost analysis and per-cluster optimization.
 
-  Use when:
-  - Estimating ROSA Classic or HCP cluster costs for individuals or fleets
-  - Comparing Classic vs HCP costs with a savings delta
-  - Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)
-  - Generating strategic advisory reports for Classic→HCP migration engagements
+  Phase 1 — Cost Analysis:
+  - Estimate ROSA Classic or HCP cluster costs for individuals or fleets
+  - Compare Classic vs HCP costs with a savings delta
+  - Identify top optimization opportunities (contracts, Karpenter, ARM, Spot)
+  - Generate strategic cost reports for Classic→HCP migration engagements
+
+  Phase 2 — Per-Cluster Optimization Guide:
+  - Machine pool breakdown tables per cluster (instance, vCPU, GiB, min→max nodes/vCPU)
+  - Ordered recommendations per cluster (🟢 Quick / 🟡 Medium / 🔴 Long-term)
+  - Confirmed instance pricing via AWS Pricing MCP
+  - Fleet summary tables across all effort levels
 
   Handles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.
+
+  Self-improving: add confirmed pricing and engagement lessons to the registry sections after each engagement so the skill improves over time.
 
   NOT for: General AWS pricing questions or non-ROSA OpenShift deployments.
 license: Apache-2.0
@@ -81,7 +89,17 @@ Available via Karpenter on ROSA HCP 4.22+.
 
 ## EBS Storage
 
-gp3 at **$0.08/GB-month** in us-east-1.
+gp3 pricing varies by region. Common rates:
+
+| Region | $/GB-month | $/node/month (300 GB) |
+|---|---|---|
+| us-east-1 (N. Virginia) | $0.08 | $24.00 |
+| ap-northeast-1 (Tokyo) | $0.088 | $26.40 |
+| ap-northeast-3 (Osaka) | $0.088 | $26.40 |
+| ap-southeast-2 (Sydney) | $0.096 | $28.80 |
+| eu-west-1 (Ireland) | $0.088 | $26.40 |
+
+For other regions, look up the current gp3 rate using the AWS Pricing MCP tool (`get_pricing` with service code `AmazonEC2`, filter `storageClass=General Purpose`, `volumeType=gp3`).
 
 Default root volume: **300 GB gp3** per node (applies to control plane, infra, and worker nodes unless the user overrides).
 
@@ -316,6 +334,125 @@ Per-node costs at 1-year contract terms, 4 vCPUs (m7i.xlarge / m7g.xlarge):
 Classic cluster overhead (multi-AZ, 1yr reserved EC2+EBS for CP+infra): **$975.25/cluster/month** = **$11,703/cluster/year**
 HCP cluster fee: **$182.50/cluster/month** = **$2,190/cluster/year**
 
+## Phase 2: Per-Cluster Optimization Guide
+
+Generate this after the cost analysis (`YYYY-MM-DD-cost-analysis.md`) is complete and indexed. Output file: `reports/<customer>/YYYY-MM-DD-per-cluster-optimization.md`. Update `index.md` Generated Reports table when done.
+
+### When to generate
+
+The user may request it explicitly ("show me per-cluster recommendations"), or you should offer it after finishing the cost analysis: "Want me to generate a per-cluster optimization guide with machine pool breakdowns and ordered recommendations?"
+
+Use `reports/example/per-cluster-optimization.md` as the structural template. Copy its section order and table layouts; replace placeholder content with customer-specific data.
+
+### Per-cluster table format
+
+One `###` section per cluster, ordered cost-descending (most expensive first). Within a section:
+
+```markdown
+### <cluster-name> — $X,XXX/mo [⚠ optional flag]
+
+| Pool | Instance | vCPU | GiB | Min→Max nodes | Min→Max vCPU | Notes |
+|---|---|---|---|---|---|---|
+| worker | r5.2xlarge | 8 | 64 | 3→15 | 24→120 | variable |
+| worker-01 | r5.8xlarge | 32 | 256 | 3→3 | 96→96 | fixed |
+| **Worker total** | | | | | **120→216** | Actual (telemetry): **165 vCPU** |
+| CP nodes | m5.2xlarge | 8 | 32 | 3→3 | — | Classic overhead |
+| Infra nodes | r5.4xlarge | 16 | 128 | 3→3 | — | Classic overhead |
+
+**Cost:** ROSA $X,XXX | EC2+EBS $X,XXX | HCP fee $183 | **Total $X,XXX/mo**
+
+**Optimizations:**
+🟢 ...
+🟡 ...
+🔴 ...
+```
+
+**Rules:**
+- Classic clusters: one "Worker total" row summing worker pools; then separate CP and Infra rows below the divider (CP/Infra vCPUs go in Notes, not in the vCPU column — they don't count toward ROSA billing)
+- HCP clusters: one "Total" row at end of the table
+- Fixed pools: note `fixed — AT MAX` if actual = max
+- `Min→Max vCPU` = min_nodes × vCPU_per_node → max_nodes × vCPU_per_node
+- Telemetry actual: use HCC/Telesense snapshot; note `⚠` if actual exceeds configured max
+- Identical cluster profiles: document the first fully; for duplicates write one line: "Identical profile to X — instance, vCPU/GiB per node, vCPU range. Actual (telemetry): N vCPU. Same optimizations."
+
+### Effort taxonomy
+
+```
+🟢 Quick win — no migration required; can be done with standard machine pool replace procedure
+🟡 Medium — requires planning, scheduling, or coordination (e.g., contract changes, capacity review)
+🔴 Long-term — requires HCP, specific OCP version, Karpenter enabled, or validated workload profiling
+```
+
+Use consistent ordering within each cluster: 🟢 first, then 🟡, then 🔴.
+
+### AMD vs Intel guidance
+
+When a cluster uses r7a (AMD EPYC) or any AMD instance family, check whether an Intel equivalent is cheaper in the target region **before** recommending it as the preferred x86 option. Do not assume AMD is cheaper than Intel.
+
+In **ap-northeast-1**: r7i (Intel Sapphire Rapids) is cheaper than r7a (AMD EPYC Genoa) at the same vCPU/memory tier. Use r7i as the default x86 recommendation.
+
+AMD EPYC Genoa's advantage over Intel is **memory bandwidth** (12 DDR5 channels vs Intel's 8). If workloads are memory-bandwidth-saturated, AMD may outperform Intel despite the higher cost — always note this in the recommendation with a benchmark caveat:
+
+> "Benchmark first if the workload is memory-bandwidth-saturated — AMD EPYC Genoa has higher memory bandwidth (12 DDR5 channels vs Intel Sapphire Rapids' 8); if bandwidth is the bottleneck, r7i may underperform despite the lower price."
+
+Always confirm instance pricing via the AWS Pricing MCP tool before recommending an instance swap. See "Confirmed Instance Pricing" section below.
+
+### ARM prerequisite
+
+All ARM Graviton migrations require **Karpenter to be enabled first** (ROSA HCP 4.22+). Karpenter's NodePool configuration handles mixed-architecture scheduling and workload constraints. Without Karpenter, ARM migration requires manual pool management and is higher-risk.
+
+Mark all ARM recommendations as 🔴 and include: "Requires Karpenter enabled first."
+
+IBM Cloud Pak workloads are **x86_64 only** — never recommend ARM for IBM CP clusters regardless of HCP status.
+
+### Confirmed Instance Pricing section
+
+Always include a "Confirmed Instance Upgrade Pricing" table at the top of the optimization document, before any cluster sections. Use the AWS Pricing MCP tool to confirm each instance price; record source and date. Format:
+
+```markdown
+## Confirmed Instance Upgrade Pricing (<region>, on-demand)
+
+| Current | vCPU | GiB | $/hr | Confirmed | Replacement | $/hr | Confirmed | Delta | Note |
+|---|---|---|---|---|---|---|---|---|---|
+| r5.2xlarge | 8 | 64 | $0.6080 | YYYY-MM-DD | **r6i.2xlarge** | $0.6080 | YYYY-MM-DD | $0 | Free perf upgrade |
+| r7a.2xlarge | 8 | 64 | $0.7342 | YYYY-MM-DD | **r7i.2xlarge** | $0.6384 | YYYY-MM-DD | −13% | x86 default; benchmark if mem-BW bound |
+| r7a.2xlarge | 8 | 64 | $0.7342 | YYYY-MM-DD | **r7g.2xlarge** | $0.5168 | YYYY-MM-DD | −30% | ARM — Karpenter first |
+```
+
+Each row carries the date the price was confirmed via AWS Pricing MCP. Before including a row, check the registry (see "Confirmed Instance Pricing Registry" section): if the rate was confirmed within 30 days, use it directly and carry the same date. If older than 30 days, re-query the API, update the registry row with the new rate and today's date, then write the refreshed rate into this table. Never include an instance without a confirmed date; mark estimated rates with `≈` prefix (e.g. `≈$0.50`).
+
+### Fleet summary tables
+
+End the document with three fleet-level summary tables:
+
+```markdown
+## Fleet Optimization Summary
+
+### 🟢 Quick wins — do now, no migration required
+| Action | Clusters | Estimated saving |
+|---|---|---|
+
+### 🟡 Medium — plan and schedule
+| Action | Clusters | Estimated saving |
+|---|---|---|
+
+### 🔴 Long-term — post-Karpenter or validated profiling
+| Action | Clusters | Estimated saving |
+|---|---|---|
+```
+
+---
+
+## Execution Approach
+
+For standard ROSA cost reports, follow this discipline:
+
+**No brainstorming or design docs.** Jump directly to data collection and file writing — these are routine deliverables with all needed structure in this skill. Do not invoke the brainstorming skill.
+
+**Write incrementally.** Create `reports/<customer>/index.md` immediately after confirming the cluster list and scope (skeleton with placeholders is fine). Fill in each cluster's row and node pool data as you gather it from OCM. Do not wait until all data is collected before writing any files — that risks running out of context and losing collected information.
+
+**Use only the example report as a template reference.** `reports/example/` is the only tracked template. Never read gitignored customer report files (`reports/suncorp/`, `reports/cathay-pacific/`, etc.) — they are not available to other users and should not be treated as authoritative sources. This skill and `reports/example/` contain all needed templates and conventions.
+
 ## File Output Conventions
 
 All commands write their output to the `reports/` directory. Collect the customer name at the start of every command and use it to determine the output path.
@@ -326,6 +463,7 @@ All commands write their output to the `reports/` directory. Collect the custome
 reports/
 └── <customer-name>/
     ├── index.md                          # Customer profile and report history
+    ├── cost-explorer.html                # Interactive cost explorer
     ├── YYYY-MM-DD-cost-estimate.md
     ├── YYYY-MM-DD-cost-compare.md
     ├── YYYY-MM-DD-cost-optimize.md
@@ -416,11 +554,133 @@ Whenever you recalculate cluster vCPU counts for a customer (new telemetry snaps
 
 Do not update any report until index.md reflects the new data. This prevents reports from diverging from the customer profile.
 
+### cost-explorer.html — customization guide
+
+Start from `reports/example/cost-explorer.html`. The following must be updated for each customer:
+
+| Field | What to set |
+|---|---|
+| `<title>` and `<h1><span>` | Customer name |
+| `.header-meta` text | Cluster count, region(s), EC2 pricing date |
+| `CLUSTERS` array | One entry per cluster (schema below) |
+| `EC2` object | On-demand $/vCPU/hr per instance key (from AWS Pricing MCP or this skill's embedded rates) |
+| `EBS_NODE` | `300 × gp3_rate_in_region` (e.g., $26.40 in ap-northeast-1) |
+| `CLASSIC_OH` | Default per-cluster CP+Infra overhead in $/month |
+| `s.contractTerm` initial value | Match customer's current term (`'paygo'`, `'1yr'`, `'3yr'`) |
+| `s.ec2Discount` initial value | 0 for PAYGO/on-demand, 40 for 1yr, 60 for 3yr |
+
+**CLUSTERS entry schema:**
+
+```js
+{
+  id:         "abcd1234",   // first 8 chars of external cluster ID
+  name:       "my-cluster",
+  type:       "hcp",        // or "classic"
+  az:         "multi",      // Classic only: "single" or "multi"
+  nodes:      8,            // worker nodes at steady state
+  min:        16,           // autoscaler min vCPU across all pools
+  steady:     32,           // actual vCPU from telemetry (billing basis)
+  burst:      32,           // autoscaler max vCPU − actual vCPU (headroom)
+  inst:       "r7i_2xl",    // key into the EC2 object
+  cat:        "memory",     // "memory" | "general" | "compute" — controls ARM toggle
+  cpInfraOH:  1911,         // Classic only: per-cluster CP+Infra $/month; omit to use CLASSIC_OH
+}
+```
+
+**Mixed-instance clusters:** Use a blended $/vCPU/hr = total_node_hourly_cost / total_vCPU.
+Set `cat` to the dominant instance family.
+
+**Per-cluster Classic overhead:** When Classic clusters use different infra types, add `cpInfraOH` to each Classic entry and patch `calcCluster`:
+
+```js
+// in calcCluster, replace:
+const overhead = isHcp ? HCP_FEE : CLASSIC_OH;
+// with:
+const overhead = isHcp ? HCP_FEE : (c.cpInfraOH ?? CLASSIC_OH);
+// and propagate into the return:
+cpInfra: isHcp ? null : (c.cpInfraOH ?? CLASSIC_OH),
+```
+
+**`min` and `steadyVCPU` columns:** The per-cluster table shows min / actual / max. Add these to `calcCluster`'s return:
+
+```js
+minVCPU:    Math.round((c.min ?? c.steady) * binpack),
+steadyVCPU: effSteady,
+```
+
+**Baseline snapshot:** Set `s.contractTerm` and `s.ec2Discount` defaults to the customer's current configuration so the initial baseline reflects actual spend. The user can then move sliders to explore savings.
+
 ## Constraints and Assumptions
 
 - Region: confirmed per customer (see Customer setup step 4). ROSA worker node fees are uniform across AWS standard Regions; EC2 rates vary by region — use the AWS Pricing API or the embedded us-east-1 rates as a baseline and note if using a proxy rate for another region.
 - Hours/month: 730.
 - vCPU counts in Live mode come from `ocm list machinepool` replica counts, not live utilization metrics.
 - Discount multipliers are approximations for standard reserved instances. Users with EDP or private pricing should provide explicit percentages.
-- No calls to the AWS Pricing API — rates are embedded in this skill.
-- Verify current rates at https://aws.amazon.com/rosa/pricing/ before quoting customers.
+- EC2 rates: use embedded rates in this skill as defaults. For non-us-east-1 regions or when the AWS Pricing MCP tool is available, look up rates directly and note the source and date. The embedded rates are for us-east-1 and may not reflect current pricing in other regions.
+- Verify current ROSA rates at https://aws.amazon.com/rosa/pricing/ before quoting customers.
+
+---
+
+## Confirmed Instance Pricing Registry
+
+On-demand rates confirmed via AWS Pricing MCP. Each row carries the date it was last confirmed.
+
+**Freshness rule:** Before using a rate from this registry, check its `Confirmed` date. If it is **more than 30 days old**, re-query the AWS Pricing MCP for that instance, update the row with the new rate and today's date, then use the refreshed rate in the report. If the rate changed, note it in the report header. If unchanged, the refresh still resets the clock.
+
+When a rate is not in the registry at all, query the API, add a new row with today's date, and use the confirmed rate.
+
+### ap-northeast-1 (Tokyo)
+
+Rates below confirmed identical for ap-northeast-3 (Osaka) for all instances listed.
+
+| Instance | vCPU | GiB | $/hr | $/vCPU/hr | Confirmed |
+|---|---|---|---|---|---|
+| m5.xlarge | 4 | 16 | $0.2480 | $0.0620 | 2026-07-01 |
+| m5.2xlarge | 8 | 32 | $0.4960 | $0.0620 | 2026-07-01 |
+| m5.8xlarge | 32 | 128 | $1.9840 | $0.0620 | 2026-07-01 |
+| m6a.2xlarge | 8 | 32 | $0.4464 | $0.0558 | 2026-07-01 |
+| m7i.8xlarge | 32 | 128 | $2.0832 | $0.0651 | 2026-07-01 |
+| r5.xlarge | 4 | 32 | $0.3040 | $0.0760 | 2026-07-01 |
+| r5.2xlarge | 8 | 64 | $0.6080 | $0.0760 | 2026-07-01 |
+| r5.4xlarge | 16 | 128 | $1.2160 | $0.0760 | 2026-07-01 |
+| r5.8xlarge | 32 | 256 | $2.4320 | $0.0760 | 2026-07-01 |
+| r5a.8xlarge | 32 | 256 | $2.1920 | $0.0685 | 2026-07-01 |
+| r6i.8xlarge | 32 | 256 | $2.4320 | $0.0760 | 2026-07-01 |
+| r6a.8xlarge | 32 | 256 | $2.1888 | $0.0684 | 2026-07-01 |
+| r7i.2xlarge | 8 | 64 | $0.6384 | $0.0798 | 2026-07-01 |
+| r7i.4xlarge | 16 | 128 | $1.2768 | $0.0798 | 2026-07-01 |
+| r7a.xlarge | 4 | 32 | $0.3671 | $0.0918 | 2026-07-01 |
+| r7a.2xlarge | 8 | 64 | $0.7342 | $0.0918 | 2026-07-01 |
+| r7g.2xlarge | 8 | 64 | $0.5168 | $0.0646 | 2026-07-01 |
+| r8g.2xlarge | 8 | 64 | $0.5685 | $0.0711 | 2026-07-01 |
+| c6a.4xlarge | 16 | 32 | $0.7704 | $0.0482 | 2026-07-01 |
+| c7i.4xlarge | 16 | 32 | $0.8988 | $0.0562 | 2026-07-01 |
+| t3.xlarge | 4 | 16 | $0.2176 | $0.0544 | 2026-07-01 |
+| t3a.xlarge | 4 | 16 | $0.1958 | $0.0490 | 2026-07-01 |
+| g4dn.4xlarge | 16 | 64 | $1.6250 | $0.1016 | 2026-07-01 |
+
+---
+
+## Engagement Lessons
+
+Reusable findings from completed customer engagements. **After each engagement, add any new pricing discoveries or analysis patterns that would have saved time.** Keep entries concise — one paragraph max per lesson. Remove lessons that become stale or are superseded by a newer pattern.
+
+### AMD vs Intel in ap-northeast-1 (from MUFG, 2026-07)
+
+In ap-northeast-1, **Intel (r7i) is cheaper than AMD (r7a)** for the same vCPU/memory tier: r7i.2xlarge $0.6384 vs r7a.2xlarge $0.7342 (−13%). Do not assume AMD is the cheaper x86 option — pricing varies by region. AMD EPYC Genoa's legitimate advantage is higher memory bandwidth (12 DDR5 channels vs Intel Sapphire Rapids' 8); recommend AMD only if there's evidence the workload is memory-bandwidth-saturated. Otherwise, recommend Intel and note the benchmark caveat.
+
+### ARM prerequisite: Karpenter first (from MUFG, 2026-07)
+
+ARM Graviton pool migrations require Karpenter to be enabled first (ROSA HCP 4.22+). Karpenter's NodePool architecture handles mixed-architecture scheduling cleanly; without it, ARM migration requires manual pool management across drain cycles and is higher-risk operationally. Always mark ARM as 🔴 Long-term and include "Requires Karpenter enabled first" in the recommendation text.
+
+### Autoscaler max is per-pool, not cluster-wide (from MUFG, 2026-07)
+
+The "max vCPU" for a cluster is the arithmetic sum of `max_nodes × vCPU_per_node` across all machine pools — not a single cluster-wide cap. OCM configures `MachineAutoscaler` resources per pool. Actual running vCPU can exceed the arithmetic sum if live node counts exceed pool configs (known OCM soft-limit anomaly). When actual > configured max, note this as `⚠` and recommend inspecting `ocm list machinepool --cluster <id>` or `oc get machineautoscaler -n openshift-machine-api`.
+
+### r6i/r6a are free upgrades from r5/r5a at same price (from MUFG, 2026-07)
+
+In ap-northeast-1: r6i.8xlarge = r5.8xlarge ($2.4320/hr), r6a.8xlarge ≈ r5a.8xlarge ($2.1888 vs $2.1920). These are zero-cost instance family upgrades (Intel Ice Lake / AMD Milan generation jump). Recommend these as 🟢 quick wins for any Classic cluster still on r5/r5a pools. Node count reduction is possible if Classic workers are CPU-bound (improved per-core throughput) — flag this contingency and recommend pulling CloudWatch CPUUtilization before committing to node reduction savings.
+
+### Burst billing: use 20% of remaining headroom as the conservative default (from MUFG, 2026-07)
+
+Burst billing = the cost of vCPU headroom that isn't currently used but may be. A conservative default of 20% × (max vCPU − actual vCPU) reflects occasional scale-out without overstating steady-state cost. Clusters at ceiling (actual = max) have zero burst billing. Surface burst billing as a separate line item so customers can see how much they're paying for headroom vs running workloads.
