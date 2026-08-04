@@ -29,3 +29,14 @@ Claude Code plugin for OpenShift Cluster Manager (OCM) operations.
 ## Skills
 
 - **ocm-cli** — Comprehensive OCM CLI reference, automatically loaded when you work with OCM/clusters
+
+## Cursor Install
+
+Skills work in Cursor as-is — commands are Claude Code only.
+
+```bash
+mkdir -p ~/.cursor/skills/ocm-cli
+cp plugins/ocm/skills/ocm-cli/SKILL.md ~/.cursor/skills/ocm-cli/
+```
+
+Restart Cursor. The `ocm-cli` skill auto-invokes whenever you work with OCM or clusters.
