@@ -37,6 +37,16 @@ done
 
 Restart Cursor. The `github-distributed-workflow` skill auto-invokes on git/GitHub work; the others load on demand as detail references.
 
+### Optional: install the git-guard hook
+
+A `beforeShellExecution` hook that mechanically blocks commits to `main`, hard force-pushes, and staged secrets — regardless of what the agent decides. Run once per machine from the repo root:
+
+```bash
+bash plugins/github/hooks/install-cursor-hooks.sh
+```
+
+Then restart Cursor. Re-run after updates to pick up the latest script.
+
 ## Source
 
 Skill adapted from [cursor-github-best-practices-skill](https://github.com/manujoy7/cursor-github-best-practices-skill) (MIT).

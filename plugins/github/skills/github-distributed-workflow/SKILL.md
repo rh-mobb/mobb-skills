@@ -64,6 +64,16 @@ You are operating in a distributed development environment. Your primary goal wh
 - Propose and implement a resolution that preserves the intended functionality of both branches.
 - Full detail: see `github-conflict-resolution` skill.
 
+## Cursor hook (optional)
+
+A `beforeShellExecution` hook (`plugins/github/hooks/git-guard.sh`) mechanically enforces the three highest-risk rules — commits to `main`, hard force-pushes, and staged secrets — independently of these instructions. Install it once per machine from the repo root:
+
+```bash
+bash plugins/github/hooks/install-cursor-hooks.sh
+```
+
+The hook is a backstop, not a substitute for judgment. These skill rules cover everything the hook does not.
+
 ## Additional resources
 
 - Security checklist and trust boundaries: `github-security` skill
