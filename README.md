@@ -2,38 +2,56 @@
 
 [![skillsaw grade](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frh-mobb%2Fmobb-skills%2Fmain%2F.skillsaw-badge.json)](https://skillsaw.org/)
 
-Claude Code plugin marketplace for the MOBB (Managed OpenShift Black Belt) team.
+AI agent skills for the MOBB (Managed OpenShift Black Belt) team — covering OCM, ROSA, and GitHub workflow.
+
+Works with **Claude Code** (via plugin marketplace) and **any other agent** (Cursor, Windsurf, Codex, etc.) via `npx skills`.
 
 [Discover available plugins](https://rh-mobb.github.io/mobb-skills/)
 
 ## Installation
 
-### Add the Marketplace
+### Any agent (Cursor, Windsurf, Codex, …)
+
+```bash
+# All skills, project-level
+npx skills add rh-mobb/mobb-skills
+
+# All skills, global
+npx skills add -g rh-mobb/mobb-skills
+
+# Single skill
+npx skills add rh-mobb/mobb-skills --skill ocm-cli
+
+# List available skills without installing
+npx skills add rh-mobb/mobb-skills --list
+```
+
+### Claude Code
 
 ```bash
 /plugin marketplace add rh-mobb/mobb-skills
-```
-
-### Install a Plugin
-
-```bash
 /plugin install ocm@mobb-skills
 ```
 
-### Use Commands
+Claude Code also gets slash commands not available via `npx skills`:
 
 ```bash
 /ocm:whoami
+/rosa:cost
 ```
 
-## Updating Plugins
+## Updating
 
 ```bash
+# npx skills
+npx skills update
+
+# Claude Code
 /plugin marketplace update mobb-skills
 /plugin install ocm@mobb-skills
 ```
 
-### Auto-Sync on Session Start
+### Claude Code — Auto-Sync on Session Start
 
 Add to your project's `.claude/settings.json`:
 
@@ -52,6 +70,6 @@ Add to your project's `.claude/settings.json`:
 
 ## Contributing
 
-See [AGENTS.md](AGENTS.md) for plugin development guidelines.
+See [AGENTS.md](AGENTS.md) for development guidelines.
 
 Before opening a PR, run `make lint` locally.

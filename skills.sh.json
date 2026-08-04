@@ -1,0 +1,23 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "OpenShift",
+      "description": "Skills for managing OpenShift clusters via OCM and ROSA",
+      "skills": ["ocm-cli", "rosa-cli", "rosa-cost"]
+    },
+    {
+      "title": "GitHub",
+      "description": "Skills for safe, auditable Git and GitHub workflows",
+      "skills": [
+        "github-distributed-workflow",
+        "github-branching",
+        "github-commits",
+        "github-pull-requests",
+        "github-security",
+        "github-conflict-resolution"
+      ]
+    }
+  ]
+}
