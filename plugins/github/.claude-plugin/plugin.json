@@ -1,0 +1,8 @@
+{
+  "name": "github",
+  "description": "GitHub workflow best practices — branching, conventional commits, pull request generation, and conflict resolution",
+  "version": "0.1.0",
+  "author": {
+    "name": "github.com/rh-mobb"
+  }
+}
