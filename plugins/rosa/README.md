@@ -42,15 +42,3 @@ For a quick estimate with 5 clusters at 240 total vCPUs:
 
 Rates sourced from https://aws.amazon.com/rosa/pricing/ (us-east-1, current as of 2026-06).
 Always verify current rates before quoting to customers.
-
-## Cursor Install
-
-Skills work in Cursor as-is — commands are Claude Code only.
-
-```bash
-mkdir -p ~/.cursor/skills/rosa-cli ~/.cursor/skills/rosa-cost
-cp plugins/rosa/skills/rosa-cli/SKILL.md ~/.cursor/skills/rosa-cli/
-cp plugins/rosa/skills/rosa-cost/SKILL.md ~/.cursor/skills/rosa-cost/
-```
-
-Restart Cursor. Both skills auto-invoke on ROSA cost and CLI work.
