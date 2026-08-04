@@ -27,6 +27,7 @@ Canonical example: `plugins/ocm/`
 | `make lint` | Before every commit — validates structure, format, and marketplace registration |
 | `make update` | After adding/changing plugins — syncs docs and marketplace |
 | Bump `version` in `plugin.json` | When modifying commands or skills (not README-only changes) |
+| Update `skills.sh.json` | After adding a new plugin — add its skills to the appropriate grouping so `npx skills` users can discover them |
 
 ## Skill References
 
