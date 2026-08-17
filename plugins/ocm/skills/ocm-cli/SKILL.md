@@ -14,10 +14,10 @@ description: |
 
   NOT for: MCP-based cluster management → use the cluster-inventory or cluster-creator skills.
 license: Apache-2.0
-user_invocable: true
-model: inherit
-color: "#cc0000"
-allowed-tools: []
+metadata:
+  user_invocable: "true"
+  model: inherit
+  color: "#cc0000"
 ---
 
 # OCM CLI Reference

@@ -21,10 +21,10 @@ description: |
 
   NOT for: General AWS pricing questions or non-ROSA OpenShift deployments.
 license: Apache-2.0
-user_invocable: false
-model: inherit
-color: "#cc0000"
-allowed-tools: []
+metadata:
+  user_invocable: "false"
+  model: inherit
+  color: "#cc0000"
 ---
 
 # ROSA Cost Reference

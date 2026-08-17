@@ -13,10 +13,10 @@ description: |
   Covers all rosa subcommands with exact flags and Classic/HCP parallel sections.
   NOT for: ROSA cost estimation (use rosa-cost skill).
 license: Apache-2.0
-user_invocable: false
-model: inherit
-color: "#cc0000"
-allowed-tools: []
+metadata:
+  user_invocable: "false"
+  model: inherit
+  color: "#cc0000"
 ---
 
 # ROSA CLI Reference
