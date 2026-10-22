@@ -4,8 +4,8 @@
   "groupings": [
     {
       "title": "OpenShift",
-      "description": "Skills for managing OpenShift clusters via OCM and ROSA",
-      "skills": ["ocm-cli", "rosa-cli", "rosa-cost"]
+      "description": "Skills for managing OpenShift clusters via OCM, ROSA, and ARO",
+      "skills": ["ocm-cli", "rosa-cli", "rosa-cost", "aro-cost"]
     },
     {
       "title": "GitHub",

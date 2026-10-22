@@ -8,9 +8,10 @@
 # Superpowers scratch
 .superpowers/
 
-# Reports (only example is tracked)
+# Reports (only examples are tracked)
 reports/*
 !reports/example/
+!reports/example-aro/
 
 # Local references
 references/
