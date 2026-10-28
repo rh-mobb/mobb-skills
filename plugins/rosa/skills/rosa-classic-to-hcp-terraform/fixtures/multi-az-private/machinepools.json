@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "id": "worker",
+      "instance_type": "m5.xlarge",
+      "replicas": 6,
+      "availability_zones": ["us-east-1a", "us-east-1b", "us-east-1c"],
+      "autoscaling": { "enabled": false },
+      "root_volume": { "size": 300 }
+    },
+    {
+      "id": "gpu",
+      "instance_type": "g4dn.xlarge",
+      "replicas": 3,
+      "availability_zones": ["us-east-1a", "us-east-1b", "us-east-1c"],
+      "autoscaling": { "enabled": true, "min_replicas": 3, "max_replicas": 9 },
+      "labels": { "gpu": "true" }
+    },
+    {
+      "id": "infra",
+      "instance_type": "r5.xlarge",
+      "replicas": 3,
+      "availability_zones": ["us-east-1a", "us-east-1b", "us-east-1c"],
+      "labels": { "node-role.kubernetes.io/infra": "" },
+      "taints": [
+        {
+          "key": "node-role.kubernetes.io/infra",
+          "value": "reserved",
+          "effect": "NoSchedule"
+        }
+      ]
+    }
+  ]
+}

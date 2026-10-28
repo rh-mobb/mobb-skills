@@ -1,0 +1,20 @@
+{
+  "id": "01234567-89ab-cdef-0123-456789abcdef",
+  "name": "demo-multi",
+  "multi_az": true,
+  "hypershift": { "enabled": false },
+  "region": { "id": "us-east-1" },
+  "version": { "raw_id": "4.16.20", "channel_group": "stable" },
+  "network": {
+    "machine_cidr": "10.0.0.0/16",
+    "pod_cidr": "10.128.0.0/14",
+    "service_cidr": "172.30.0.0/16",
+    "host_prefix": 23
+  },
+  "aws": {
+    "private_link": true,
+    "subnet_ids": ["subnet-private-a", "subnet-private-b", "subnet-private-c"]
+  },
+  "nodes": { "master": 3, "infra": 3, "compute": 6 },
+  "fips": false
+}

@@ -2,12 +2,13 @@
 
 ROSA cost estimation and optimization plugin for the MOBB team.
 
-Supports ROSA Classic and ROSA HCP cost calculation for individual clusters and fleets.
+Supports ROSA Classic and ROSA HCP cost calculation for individual clusters and fleets. Includes Classic→HCP Terraform generation from a live Classic cluster.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
+| `/rosa:classic-to-hcp` | Generate HCP Terraform (rosa-hcp module + tfvars) from a Classic cluster |
 | `/rosa:cost` | Guided wizard — collects data conversationally, produces full analysis |
 | `/rosa:cost-estimate` | Calculate monthly/annual costs for a fleet |
 | `/rosa:cost-compare` | Classic vs HCP side-by-side with savings delta |

@@ -1,0 +1,10 @@
+{
+  "items": [
+    {
+      "id": "worker",
+      "instance_type": "m5.xlarge",
+      "replicas": 2,
+      "availability_zones": ["us-east-1a"]
+    }
+  ]
+}
