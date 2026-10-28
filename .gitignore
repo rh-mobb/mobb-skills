@@ -17,3 +17,7 @@ references/
 
 # VS Code Local History extension
 .history/
+
+# Local Terraform output, provider cache, and downloaded modules
+/tmp/
+**/.terraform/
