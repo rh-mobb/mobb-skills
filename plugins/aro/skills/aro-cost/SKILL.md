@@ -28,6 +28,8 @@ metadata:
 
 Cite https://azure.microsoft.com/en-us/pricing/details/openshift/ when presenting results. Rates here are current as of 2026-10. Azure VM rates vary by region and change frequently: confirm with the Azure Retail Prices API before quoting to customers.
 
+Several statements here come from internal sources or observation rather than public documentation. Re-verify them before each engagement: subscription transfer to HCP (ARO product management, 2026-10), Karpenter/AutoNode status on ROSA and ARO, ARO HCP preview status and regional availability, and provisioning times.
+
 ## Presenting an estimate: modeled, not actual
 
 Everything this skill produces from public rates and a cluster inventory is a **preliminary estimate**. It has not been reconciled to the customer's billing records. Get this framing right or the customer will treat a model as a quote.
@@ -81,7 +83,7 @@ Ask two separate questions. They are different commitments and are frequently co
 | Term | Multiplier | Ask as |
 |---|---|---|
 | Pay-as-you-go | 1.00× | "No commitment" |
-| 1-year reserved instance | ~0.58× | "1-year RI or savings plan" |
+| 1-year reserved instance | ~0.58× | "1-year RI" |
 | 3-year reserved instance | ~0.38× | "3-year RI" |
 | Azure savings plan (1yr, flexible) | ~0.65× | "Savings plan rather than RI" |
 
@@ -118,7 +120,14 @@ Reserving compute reduces the saving, because it makes the control plane being d
 
 ### Reserved compute shifts what matters
 
-Under pay-as-you-go, control plane VMs dominate the saving and disks are a rounding error. Under 3-year RI, VM cost drops ~62% while **managed disks are not covered by compute reservations and do not drop at all**. On the fleet above, disks went from 19% of the saving to 38%. When the customer is on reserved compute, verify disk sizing rather than estimating it.
+Control plane disks are a material part of the saving at every term. Under 3-year RI, VM cost drops ~62% while **managed disks are not covered by compute reservations and do not drop at all**, so their share grows. The share also depends on control plane size, because disk cost is fixed per cluster:
+
+| Disk share of the gross control plane saving | Pay-as-you-go | 3-year RI |
+|---|---|---|
+| Default cluster (3 × `Standard_D8s_v5`) | ~33% | ~56% |
+| Fleet above (15 clusters, 732 control plane vCPU) | ~19% | ~38% |
+
+When the customer is on reserved compute, verify disk sizing rather than estimating it.
 
 ## Never characterize control plane sizing
 
@@ -154,14 +163,14 @@ Do not port ROSA cost logic directly. The relevant differences:
 
 | | ROSA Classic | ARO Standard |
 |---|---|---|
-| Control plane | Red Hat-managed, not customer-billed as EC2 on HCP | **Customer-billed VMs** on Standard, removed on HCP |
-| Infrastructure nodes | Mandatory, 2–3 per cluster | **Not deployed by default** |
+| Control plane | **Customer-billed EC2** on Classic, removed on HCP | **Customer-billed VMs** on Standard, removed on HCP |
+| Infrastructure nodes | Mandatory customer-billed EC2, 2–3 per cluster on Classic | **Not deployed by default** |
 | ARM / Graviton | Supported, a major savings lever | **No ARM sizes in the supported list** |
-| Karpenter | GA-track on ROSA HCP 4.22+ (AutoNode) | **In development for ARO HCP**, not yet available. See the Karpenter section |
+| Karpenter | ROSA HCP 4.22+ (AutoNode), per the rosa-cost skill; re-check | **In development for ARO HCP**, not yet available. See the Karpenter section |
 | Scale to zero | Supported with Karpenter | **Unsupported today**, deallocating cluster VMs voids support |
 | Subscription transfer to HCP | Supported | **Supported** (confirmed with ARO PM, 2026-10) |
 
-The headline consequence: on ARO the Standard→HCP saving is driven almost entirely by eliminating three control plane VMs and their disks, offset by the cluster management fee. There is no infra-node saving to count, and no ARM or Spot lever to layer on afterwards.
+The headline consequence: on ROSA the Classic→HCP saving removes both control plane and infra nodes; on ARO it is driven almost entirely by eliminating three control plane VMs and their disks, offset by the cluster management fee. There is no infra-node saving to count, and no ARM or Spot lever to layer on afterwards.
 
 **Do not mention ROSA in customer-facing ARO deliverables.** An ARO customer does not care how ROSA behaves, and the comparison reads as a non-sequitur. Use it to inform your own modeling only.
 
@@ -231,7 +240,7 @@ The basis is Microsoft's ARO service definition, which documents 1,024 GiB Premi
 
 Two things to say when this line is material:
 
-- **Reserved instances do not cover managed disks.** When compute is reserved, VM cost falls while disk cost does not, so disks become a much larger share of the saving. At 3-year RI this line can reach 38% of the gross control plane saving.
+- **Reserved instances do not cover managed disks.** When compute is reserved, VM cost falls while disk cost does not, so disks become a much larger share of the saving. At 3-year RI this line is ~56% of the gross control plane saving for a default cluster, less where control plane VMs are larger (see the table above).
 - **Inspecting one cluster does not validate a fleet.** Checking one managed resource group with `az disk list` confirms that cluster only. Clusters built at different times or OpenShift versions may differ. Ask for a disk inventory across all clusters.
 
 ## ARO Node Defaults and Constraints
@@ -301,12 +310,14 @@ Detect the mode from what the user provides.
 # Standard clusters
 az aro list -o table
 az aro show -g <rg> -n <name> \
-  --query "{cp:masterProfile.vmSize,worker:workerProfiles[0].vmSize,count:workerProfiles[0].count,ver:clusterProfile.version}"
+  --query "{ver:clusterProfile.version,cp:masterProfile.vmSize,workers:(workerProfilesStatus || workerProfiles)[].{pool:name,size:vmSize,count:count,diskGb:diskSizeGb}}"
 
-# HCP clusters
+# HCP clusters — needs the preview aro extension: az extension add --name aro
 az aro hcp cluster list -o table
-az aro hcp cluster show -g <rg> -n <name>
+az aro hcp cluster nodepool list -g <rg> -c <name> -o table
 ```
+
+**Use `workerProfilesStatus`, not `workerProfiles`.** `workerProfiles` is the worker profile sent in the create request, so it reflects install time only and undercounts any cluster scaled or given extra MachineSets since. `workerProfilesStatus` is enriched from the cluster's current MachineSets. Read every entry, not just `[0]`. Where you have cluster access, cross-check with `oc get machinesets -n openshift-machine-api`.
 
 ### Detailed Mode — Pool Spec Block
 
@@ -334,9 +345,8 @@ license_fee      = ceil(worker_vcpus / 4) × license_block
 # Cluster management fee
 cluster_fee      = $182.50/month (HCP only); $0 for Standard
 
-# Worker VMs
+# Worker VMs (worker disks excluded: unchanged by architecture, listed as an exclusion)
 worker_vm        = worker_vcpus × vcpu_rate × azure_discount × 730
-worker_disk      = worker_count × disk_gb × disk_rate_per_gb_month
 
 # Control plane VMs — Standard only; $0 on HCP
 cp_vm            = 3 × cp_vcpus × vcpu_rate × azure_discount × 730   # default D8s_v5
@@ -344,7 +354,7 @@ cp_disk          = 3 × 1024 GiB Premium SSD LRS ≈ 3 × $135           # see d
 
 # Per-cluster modeled subtotal
 cluster_total    = license_fee + cluster_fee
-                 + worker_vm + worker_disk
+                 + worker_vm
                  + cp_vm + cp_disk
 ```
 
@@ -362,12 +372,12 @@ PAYGO, eastus2, default control plane sizing.
 | Control plane disks (3 × 1,024 GiB Premium SSD) | ~$405 | $0 | **+$405** |
 | Cluster management fee | $0 | $182.50 | −$182.50 |
 | OpenShift license (worker vCPU) | unchanged | unchanged | $0 |
-| Worker VMs and disks | unchanged | unchanged | $0 |
+| Worker VMs | unchanged | unchanged | $0 |
 | **Net modeled saving per cluster** | | | **~$1,060/month** |
 
 Roughly **$12,800 per cluster per year** at pay-as-you-go, independent of cluster size.
 
-**Always include control plane disks in per-cluster figures.** Omitting them understates the saving by roughly 40% at PAYGO and more at reserved compute, and is an easy mistake when working from vCPU counts alone.
+**Always include control plane disks in per-cluster figures.** For a default cluster, omitting them understates the net saving by ~38% at PAYGO ($405 of ~$1,063) and ~75% at 3-year RI ($405 of ~$543), less where control plane VMs are larger. It is an easy mistake when working from vCPU counts alone.
 
 Adjust the control plane line for non-default sizes and for the customer's Azure compute term. At a 0.38× 3-year RI multiplier the same cluster models at roughly $543/month, because the VM component shrinks while the disk component does not.
 
@@ -409,15 +419,15 @@ The quota point is concrete and worth quantifying: migration returns the full co
 
 🟡 **Medium**
 
-5. **Compare AMD (`Das_v5`, `Eas_v5`) against Intel equivalents.** Often cheaper at identical vCPU and memory.
-6. **Consolidate small clusters.** Each Standard cluster carries three control plane VMs; each HCP cluster carries a $182.50 fee. Below a certain workload size, a namespace in a shared cluster is far cheaper than a dedicated one.
-7. **Consolidate onto fewer, larger worker nodes** where workload shape allows. The license is charged on every provisioned worker vCPU, including capacity each node reserves for the kubelet and operating system. That reservation is broadly fixed per node, so the same total spread across fewer, larger nodes leaves more available for workloads. Quantifying it requires measured node allocatable figures — do not invent a percentage.
+4. **Compare AMD (`Das_v5`, `Eas_v5`) against Intel equivalents.** Often cheaper at identical vCPU and memory.
+5. **Consolidate small clusters.** Each Standard cluster carries three control plane VMs; each HCP cluster carries a $182.50 fee. Below a certain workload size, a namespace in a shared cluster is far cheaper than a dedicated one.
+6. **Consolidate onto fewer, larger worker nodes** where workload shape allows. The license is charged on every provisioned worker vCPU, including capacity each node reserves for the kubelet and operating system. That reservation is broadly fixed per node, so the same total spread across fewer, larger nodes leaves more available for workloads. Quantifying it requires measured node allocatable figures — do not invent a percentage.
 
 🔴 **Long-term**
 
-8. **Standard→HCP migration.** HCP requires a **cluster rebuild**, not an in-place conversion: budget for workload migration, and note the identity model changes to managed identity only. Sequence on **workload risk, application compatibility and business criticality**, not version age alone — an old cluster that is also the most business-critical is a poor first candidate. Include migration effort and any parallel-running period before quoting payback.
-9. **Fleet standardization** on a small number of VM sizes to simplify reservation coverage.
-10. **Plan for Karpenter/AutoNode** once it ships on ARO HCP. Never quote a saving from it. See the Karpenter section, including the warning against double-counting it with right-sizing.
+7. **Standard→HCP migration.** HCP requires a **cluster rebuild**, not an in-place conversion: budget for workload migration, and note the identity model changes to managed identity only. Sequence on **workload risk, application compatibility and business criticality**, not version age alone — an old cluster that is also the most business-critical is a poor first candidate. Include migration effort and any parallel-running period before quoting payback.
+8. **Fleet standardization** on a small number of VM sizes to simplify reservation coverage.
+9. **Plan for Karpenter/AutoNode** once it ships on ARO HCP. Never quote a saving from it. See the Karpenter section, including the warning against double-counting it with right-sizing.
 
 Deliberately absent, because they do not apply to ARO **today**: ARM/Graviton migration (no supported sizes, and none on the roadmap), Spot instances, and scale-to-zero. Do not recommend Spot or scale-to-zero as current actions. Both arrive with Karpenter on HCP; treat them as forthcoming rather than unavailable forever, and re-check status before each engagement.
 
@@ -441,7 +451,8 @@ Append observations from real engagements.
 - 2026-10: Microsoft does not publish reserved license rates on the pricing page. Always ask the customer.
 - 2026-10: ARO HCP is not available in every region, and is described as public preview. Confirm regional availability and service status before scoping a migration, and expect source and target to need co-location for migration throughput.
 - 2026-10: **ARO subscriptions transfer from Standard to HCP**, confirmed with ARO product management. Earlier guidance that a Standard license reservation is forfeited on HCP was wrong, and materially distorted migration recommendations. The license cancels out of the delta.
-- 2026-10: A per-cluster saving computed from control plane vCPU alone understates the result by roughly 40%. Control plane **disks** are a large, separately-priced component that reserved compute does not discount. Always include them.
+- 2026-10: A per-cluster saving computed from control plane vCPU alone understates the result, by ~38% for a default cluster at PAYGO and ~75% at 3-year RI. Control plane **disks** are a large, separately-priced component that reserved compute does not discount. Always include them.
+- 2026-10: `az aro show` `workerProfiles` is install-time only. Live inventories must read `workerProfilesStatus`, across all pools, or scaled clusters are undercounted.
 - 2026-10: Customer review feedback on a 15-cluster fleet report. The substantive asks were all about epistemic honesty rather than arithmetic: title it an estimate, distinguish modeled savings from reduced payments, do not treat planning multipliers as the customer's pricing, label subtotals, list exclusions, and keep conditional roadmap items out of the headline. Arithmetic errors in that report were minor by comparison. Budget review effort accordingly.
 - 2026-10: Advice to "align worker vCPU to 4-vCPU block boundaries" does not survive contact with the supported VM list — every worker size except `Standard_NC6s_v3` is already a multiple of 4. Removed.
 
@@ -464,11 +475,62 @@ on their commitment term.
 | OpenShift license (worker vCPU) | $X | $X | $0 | $0 |
 | Control plane VMs | $X | $0 | $X | $X |
 | Control plane disks | $X | $0 | $X | $X |
-| Worker VMs + disks | $X | $X | $0 | $0 |
+| Worker VMs | $X | $X | $0 | $0 |
 | **Modeled cost subtotal** | **$X** | **$X** | **$X** | **$X** |
 ```
 
 Show control plane VMs and disks on separate rows. The disk line is large enough at reserved pricing that collapsing it invites the customer to assume it was estimated rather than modeled.
+
+### Phase 2: per-cluster optimization tables
+
+`/aro:cost-optimize` adds these after the ranked fleet-level levers, in the same report file.
+
+Open with confirmed pricing for every VM swap you recommend. Confirm each rate with the Azure Retail Prices API and add it to the Confirmed Pricing Registry:
+
+```
+## Confirmed VM pricing (<region>, pay-as-you-go)
+
+| Current | vCPU | GiB | $/hr | Proposed | $/hr | Delta | Note |
+|---|---|---|---|---|---|---|---|
+| Standard_D8s_v5 | 8 | 32 | $0.3840 | Standard_D8as_v5 | $X | X% | AMD, same vCPU/GiB |
+```
+
+Then one section per cluster, most expensive first:
+
+```
+### <cluster-name> — ~$X,XXX/mo modeled (Standard | HCP)
+
+| Pool | VM size | vCPU | GiB | Nodes min→max | Worker vCPU min→max | Notes |
+|---|---|---|---|---|---|---|
+| worker | Standard_D8s_v5 | 8 | 32 | 3→6 | 24→48 | autoscaling |
+| **Worker total (licensed)** | | | | | **24→48** | |
+| Control plane | Standard_D8s_v5 | 8 | 32 | 3 | — | Standard only; removed on HCP |
+
+**Modeled cost:** License $X | Worker VMs $X | Control plane VMs + disks $X (Standard) or cluster fee $182.50 (HCP) | **Subtotal ~$X/mo**
+
+**Optimizations:**
+🟢 ...
+🟡 ...
+🔴 ...
+```
+
+Rules:
+
+- The control plane row is a cost input. Never comment on its sizing (see **Never characterize control plane sizing**).
+- Worker vCPU counts licensed capacity only. Take min→max from the MachineSet autoscaler on Standard or node pool autoscaling on HCP. For fixed pools, min equals max.
+- Draw optimizations only from **Optimization Levers** above, ordered 🟢, 🟡, 🔴. Never ARM, Spot or scale-to-zero as current actions.
+- Compare AMD against Intel in the customer's region before recommending either. Do not assume AMD is cheaper.
+- For identical cluster profiles, document the first in full and give each duplicate one line: "Identical profile to <cluster>. Same optimizations."
+
+Close with a fleet summary:
+
+```
+| Effort | Lever | Clusters | Modeled annual saving |
+|---|---|---|---|
+| 🟢 | ... | N | ~$X |
+```
+
+Do not total levers that overlap. Right-sizing and Karpenter recover the same capacity, and consolidating a cluster away removes its HCP migration saving.
 
 ### Report structure
 
@@ -539,7 +601,7 @@ reports/
 Begin every report file with:
 
 ```markdown
-# ARO <Report Type> — <Customer Name>
+# Preliminary ARO <Report Type> Estimate — <Customer Name>
 
 **Date:** YYYY-MM-DD
 **Command:** /aro:<command-name>
@@ -554,7 +616,7 @@ Follow with the basis-and-limitations block, then the full command output.
 ### index.md format
 
 ```markdown
-# <Customer Name> — ARO Cost Analysis
+# <Customer Name> — ARO Cost Estimates
 
 **Last updated:** YYYY-MM-DD
 

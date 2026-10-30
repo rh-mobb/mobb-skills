@@ -15,7 +15,7 @@ aro:cost-estimate
 
 ## Description
 
-Runs the ARO cost formula over one or more clusters and reports monthly and annual spend, broken down by OpenShift license, control plane VMs, worker VMs and disks, and the HCP cluster management fee where applicable.
+Runs the ARO cost formula over one or more clusters and reports monthly and annual spend, broken down by OpenShift license, control plane VMs and disks, worker VMs, and the HCP cluster management fee where applicable. Worker disks are excluded because they are unchanged by the architecture.
 
 Accepts live Azure CLI cluster data, detailed pool specs, or a high-level worker vCPU budget.
 

@@ -1,4 +1,4 @@
-# ARO Cost Report — Example Corp
+# Preliminary ARO Standard-to-HCP Cost Estimate — Example Corp
 
 **Date:** 2026-10-20
 **Command:** /aro:cost-report

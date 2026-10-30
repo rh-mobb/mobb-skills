@@ -34,6 +34,6 @@ Produces a customer-ready strategic advisory report covering current fleet spend
 
 5. Call out the operational changes explicitly: managed identity only, no in-place upgrade path from Standard, regional availability limits, and ARO HCP's public preview status.
 
-5a. Follow the report structure and honesty requirements in the "Presenting an estimate" section of the aro-cost skill: title it a preliminary estimate, open with the basis-and-limitations block, label the figures a modeled cost subtotal with exclusions named, distinguish modeled savings from reduced payments, keep Karpenter out of the headline, and close with the data request.
+6. Follow the report structure and honesty requirements in the "Presenting an estimate" section of the aro-cost skill: title it a preliminary estimate, open with the basis-and-limitations block, label the figures a modeled cost subtotal with exclusions named, distinguish modeled savings from reduced payments, keep Karpenter out of the headline, and close with the data request.
 
-6. Write the report to the confirmed path and update `reports/<customer-name>/index.md`.
+7. Write the report to the confirmed path and update `reports/<customer-name>/index.md`.

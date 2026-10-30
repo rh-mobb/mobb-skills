@@ -33,6 +33,6 @@ Produces a ranked list of ARO cost savings opportunities for a fleet, grouped by
 
 4. Group recommendations as 🟢 Quick, 🟡 Medium, 🔴 Long-term, with estimated annual saving and complexity for each.
 
-5. Produce the Phase 2 per-cluster optimization tables and a fleet summary across effort levels.
+5. Produce the per-cluster optimization tables and fleet summary using the **Phase 2: per-cluster optimization tables** template in the aro-cost skill.
 
 6. Write the output to the confirmed report path and update `reports/<customer-name>/index.md`.

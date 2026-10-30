@@ -17,7 +17,7 @@ aro:cost-compare
 
 Runs the ARO cost formula over the same fleet twice, once as Standard and once as HCP, and shows the results side-by-side with a delta column.
 
-On ARO the entire delta is three customer-billed control plane VMs versus the $182.50/month cluster management fee. The OpenShift license and worker costs are identical on both architectures for the same workload.
+On ARO the entire delta is three customer-billed control plane VMs and their disks versus the $182.50/month cluster management fee. The OpenShift license and worker costs are identical on both architectures for the same workload.
 
 ## Implementation
 
