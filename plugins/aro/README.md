@@ -16,7 +16,7 @@ Azure Red Hat OpenShift (ARO) cost estimation, comparison, and optimization, cov
 
 This plugin deliberately does not reuse ROSA cost logic. The differences that matter:
 
-- **Control plane VMs and their disks are customer-billed on Standard.** Removing them is the entire Standard→HCP saving, roughly **$1,060/cluster/month** at default sizing and pay-as-you-go compute, offset by the $182.50/month cluster management fee. Control plane disks are ~40% of that and are not covered by compute reservations.
+- **Control plane VMs and their disks are customer-billed on Standard.** Removing them is the entire Standard→HCP saving, roughly **$1,060/cluster/month** at default sizing and pay-as-you-go compute, offset by the $182.50/month cluster management fee. Control plane disks (~$405/month) are ~38% of that net saving, and are not covered by compute reservations, so their share grows on reserved compute.
 - **No infrastructure nodes are deployed by default**, unlike ROSA Classic where they are mandatory. There is no infra-node line item to eliminate.
 - **No ARM/Graviton VM sizes** are supported, so the ARM price-performance lever does not exist.
 - **No Karpenter today**, and **scale-to-zero is unsupported**. Deallocating cluster VMs voids support. Karpenter/AutoNode is in active development for ARO HCP (`Azure/ARO-HCP` #7542, `openshift/hypershift` #9545) and will be HCP-only, which the skill treats as a sequencing argument for migration rather than a quotable saving.
