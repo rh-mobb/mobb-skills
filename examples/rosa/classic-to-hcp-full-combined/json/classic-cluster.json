@@ -1,0 +1,19 @@
+{
+  "id": "fedcba98-7654-3210-fedc-ba9876543210",
+  "name": "demo-single",
+  "multi_az": false,
+  "hypershift": { "enabled": false },
+  "region": { "id": "us-west-2" },
+  "version": { "raw_id": "4.15.40", "channel_group": "stable" },
+  "network": {
+    "machine_cidr": "10.10.0.0/16",
+    "pod_cidr": "10.132.0.0/14",
+    "service_cidr": "172.31.0.0/16",
+    "host_prefix": 23
+  },
+  "aws": {
+    "private_link": false,
+    "subnet_ids": ["subnet-aaa"]
+  },
+  "nodes": { "master": 1, "compute": 2 }
+}

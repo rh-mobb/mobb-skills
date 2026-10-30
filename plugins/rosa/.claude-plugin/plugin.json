@@ -1,7 +1,7 @@
 {
   "name": "rosa",
   "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
-  "version": "0.7.0",
+  "version": "0.9.0",
   "author": {
     "name": "github.com/rh-mobb"
   }

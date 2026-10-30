@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-29T04:48:11.758574+00:00",
+  "source": {
+    "cluster_name": "demo-hcp-public",
+    "cluster_id": "01234567-89ab-cdef-0123-456789abcd01",
+    "infra_id": "",
+    "region": "ap-southeast-2",
+    "private_cluster": false,
+    "cluster_state": "ready"
+  },
+  "vpc": {
+    "id": "vpc-0a1b2c3d4e5f67890",
+    "cidr_block": "10.2.0.0/16",
+    "tags": {
+      "Name": "demo-hcp-public-vpc",
+      "ManagedBy": "Terraform",
+      "Act": "3",
+      "Project": "demo-workshop"
+    }
+  },
+  "subnets": [
+    {
+      "id": "subnet-0aaa1111private2a",
+      "availability_zone": "ap-southeast-2a",
+      "cidr_block": "10.2.0.0/17",
+      "public": false,
+      "map_public_ip_on_launch": false,
+      "tags": {
+        "Name": "demo-hcp-public-private-ap-southeast-2a",
+        "kubernetes.io/role/internal-elb": "1",
+        "kubernetes.io/cluster/01234567-89ab-cdef-0123-456789abcd01": "shared",
+        "Type": "private",
+        "ManagedBy": "Terraform",
+        "Act": "3",
+        "Project": "demo-workshop"
+      }
+    },
+    {
+      "id": "subnet-0bbb2222public2a",
+      "availability_zone": "ap-southeast-2a",
+      "cidr_block": "10.2.128.0/17",
+      "public": true,
+      "map_public_ip_on_launch": true,
+      "tags": {
+        "Type": "public",
+        "Act": "3",
+        "Project": "demo-workshop",
+        "kubernetes.io/role/elb": "1",
+        "kubernetes.io/cluster/01234567-89ab-cdef-0123-456789abcd01": "shared",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-public-ap-southeast-2a"
+      }
+    }
+  ],
+  "internet_gateways": [
+    {
+      "id": "igw-0example00000001",
+      "tags": {
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-igw",
+        "Act": "3",
+        "Project": "demo-workshop"
+      }
+    }
+  ],
+  "nat_gateways": [
+    {
+      "id": "nat-0example00000001",
+      "subnet_id": "subnet-0bbb2222public2a",
+      "eip_allocation_id": "eipalloc-0example00001",
+      "state": "available",
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-nat-ap-southeast-2a"
+      }
+    }
+  ],
+  "route_tables": [
+    {
+      "id": "rtb-0example00000002",
+      "tags": {},
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.1.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.2.0.0/16",
+          "gateway_id": "local",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": null,
+          "main": true,
+          "association_id": "rtbassoc-092169ba448c4da9b"
+        }
+      ]
+    },
+    {
+      "id": "rtb-0example00000003",
+      "tags": {
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Project": "demo-workshop",
+        "Name": "demo-hcp-public-private-rt-ap-southeast-2a"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.1.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.2.0.0/16",
+          "gateway_id": "local",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "gateway_id": null,
+          "nat_gateway_id": "nat-0example00000001",
+          "transit_gateway_id": null
+        },
+        {
+          "destination_cidr": null,
+          "gateway_id": "vpce-0example00000005",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-0aaa1111private2a",
+          "main": false,
+          "association_id": "rtbassoc-02ca5f10d3a474f47"
+        }
+      ]
+    },
+    {
+      "id": "rtb-0example00000004",
+      "tags": {
+        "Name": "demo-hcp-public-public-rt",
+        "Act": "3",
+        "Project": "demo-workshop",
+        "ManagedBy": "Terraform"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.1.0.0/16",
+          "gateway_id": null,
+          "nat_gateway_id": null,
+          "transit_gateway_id": "tgw-07a873ec2b3106719"
+        },
+        {
+          "destination_cidr": "10.2.0.0/16",
+          "gateway_id": "local",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "gateway_id": "igw-0example00000001",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        },
+        {
+          "destination_cidr": null,
+          "gateway_id": "vpce-0example00000005",
+          "nat_gateway_id": null,
+          "transit_gateway_id": null
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-0bbb2222public2a",
+          "main": false,
+          "association_id": "rtbassoc-0c2c8f0c2c5f5ac45"
+        }
+      ]
+    }
+  ],
+  "vpc_endpoints": [
+    {
+      "id": "vpce-0example00000001",
+      "service_name": "com.amazonaws.ap-southeast-2.ecr.dkr",
+      "type": "Interface",
+      "subnet_ids": [
+        "subnet-0aaa1111private2a"
+      ],
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-ecr-dkr-endpoint"
+      }
+    },
+    {
+      "id": "vpce-0example00000002",
+      "service_name": "com.amazonaws.ap-southeast-2.ecr.api",
+      "type": "Interface",
+      "subnet_ids": [
+        "subnet-0aaa1111private2a"
+      ],
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-ecr-api-endpoint"
+      }
+    },
+    {
+      "id": "vpce-0example00000003",
+      "service_name": "com.amazonaws.ap-southeast-2.sts",
+      "type": "Interface",
+      "subnet_ids": [
+        "subnet-0aaa1111private2a"
+      ],
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-sts-endpoint"
+      }
+    },
+    {
+      "id": "vpce-0example00000005",
+      "service_name": "com.amazonaws.ap-southeast-2.s3",
+      "type": "Gateway",
+      "subnet_ids": [],
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "Name": "demo-hcp-public-s3-endpoint"
+      }
+    },
+    {
+      "id": "vpce-0example00000004",
+      "service_name": "com.amazonaws.vpce.ap-southeast-2.vpce-svc-00000000000000001",
+      "type": "Interface",
+      "subnet_ids": [
+        "subnet-0aaa1111private2a"
+      ],
+      "tags": {
+        "red-hat-clustertype": "rosa",
+        "Project": "demo-workshop",
+        "api.openshift.com/id": "01234567-89ab-cdef-0123-456789abcd01",
+        "kubernetes.io/cluster/01234567-89ab-cdef-0123-456789abcd01": "owned",
+        "Act": "3",
+        "ManagedBy": "Terraform",
+        "ClusterName": "demo-hcp-public",
+        "api.openshift.com/legal-entity-id": "00000000000000000000000000000000",
+        "api.openshift.com/name": "demo-hcp-public",
+        "red-hat-managed": "true",
+        "api.openshift.com/environment": "production",
+        "AWSEndpointService": "private-router"
+      }
+    }
+  ],
+  "security_groups": [
+    {
+      "id": "sg-0example00000001",
+      "name": "demo-hcp-public-vpc-endpoint-sg",
+      "description": "Security group for VPC endpoints",
+      "tags": {
+        "Act": "3",
+        "Project": "demo-workshop",
+        "Name": "demo-hcp-public-vpc-endpoint-sg",
+        "ManagedBy": "Terraform"
+      }
+    },
+    {
+      "id": "sg-0example00000002",
+      "name": "01234567-89ab-cdef-0123-456789abcd01-vpce-private-router",
+      "description": "VPC endpoint security group",
+      "tags": {
+        "api.openshift.com/environment": "production",
+        "api.openshift.com/name": "demo-hcp-public",
+        "ClusterName": "demo-hcp-public",
+        "api.openshift.com/legal-entity-id": "00000000000000000000000000000000",
+        "ManagedBy": "Terraform",
+        "red-hat-managed": "true",
+        "api.openshift.com/id": "01234567-89ab-cdef-0123-456789abcd01",
+        "Project": "demo-workshop",
+        "red-hat-clustertype": "rosa",
+        "Act": "3",
+        "kubernetes.io/cluster/01234567-89ab-cdef-0123-456789abcd01": "owned",
+        "Name": "01234567-89ab-cdef-0123-456789abcd01-vpce-private-router"
+      }
+    },
+    {
+      "id": "sg-0example00000003",
+      "name": "01234567-89ab-cdef-0123-456789abcd01-default-sg",
+      "description": "default worker security group",
+      "tags": {
+        "api.openshift.com/id": "01234567-89ab-cdef-0123-456789abcd01",
+        "red-hat-managed": "true",
+        "ManagedBy": "Terraform",
+        "api.openshift.com/legal-entity-id": "00000000000000000000000000000000",
+        "kubernetes.io/cluster/01234567-89ab-cdef-0123-456789abcd01": "owned",
+        "ClusterName": "demo-hcp-public",
+        "Act": "3",
+        "Project": "demo-workshop",
+        "Name": "01234567-89ab-cdef-0123-456789abcd01-default-sg",
+        "red-hat-clustertype": "rosa",
+        "api.openshift.com/name": "demo-hcp-public",
+        "api.openshift.com/environment": "production"
+      }
+    }
+  ],
+  "transit_gateway_attachments": [
+    {
+      "id": "tgw-attach-00c807c47878855b4",
+      "transit_gateway_id": "tgw-07a873ec2b3106719",
+      "subnet_ids": [
+        "subnet-0aaa1111private2a"
+      ],
+      "state": "available",
+      "tags": {
+        "Project": "demo-workshop",
+        "Act": "3",
+        "Name": "demo-hcp-public-tgw-attachment"
+      }
+    }
+  ],
+  "flow_logs": [],
+  "warnings": [],
+  "rosa_hcp_wiring": {
+    "aws_subnet_ids": [
+      "subnet-0aaa1111private2a",
+      "subnet-0bbb2222public2a"
+    ],
+    "private_subnet_ids_by_az": {
+      "ap-southeast-2a": "subnet-0aaa1111private2a"
+    },
+    "private_subnet_ids": [
+      "subnet-0aaa1111private2a"
+    ],
+    "public_subnet_ids": [
+      "subnet-0bbb2222public2a"
+    ]
+  }
+}

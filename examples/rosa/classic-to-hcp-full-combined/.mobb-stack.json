@@ -1,0 +1,14 @@
+{
+  "kind": "combined_hcp",
+  "aws_region": "ap-southeast-2",
+  "cluster_name": "demo-classic-hcp",
+  "cluster_id": "",
+  "module_version": "1.7.6",
+  "source_cluster_name": "",
+  "target_cluster_name": "demo-classic-hcp",
+  "account_role_prefix": "",
+  "network_mode": "copy",
+  "notes": [],
+  "unmapped": [],
+  "extra_sections": []
+}

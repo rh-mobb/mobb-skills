@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": "worker",
+      "instance_type": "m5.large",
+      "replicas": 2,
+      "availability_zones": ["us-west-2a"],
+      "root_volume": { "size": 300 }
+    },
+    {
+      "id": "memory",
+      "instance_type": "r5.2xlarge",
+      "replicas": 2,
+      "availability_zones": ["us-west-2a"],
+      "labels": { "workload": "memory" }
+    }
+  ]
+}

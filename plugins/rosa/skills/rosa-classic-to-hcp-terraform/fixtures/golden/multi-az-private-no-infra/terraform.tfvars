@@ -26,14 +26,15 @@ worker_disk_size     = 300
 account_role_prefix  = "demo"
 operator_role_prefix = "demo"
 
-admin_credentials_username = ""
-admin_credentials_password = "" # min 14 chars; upper, lower, number or symbol; no spaces
+admin_credentials_username = "admin"
+admin_credentials_password = "REPLACE-ME-14chars-min" # RHCS min 14 chars; set before production apply
 
 machine_pools = {
   gpu_1 = {
     name              = "gpu-1"
     subnet_id         = "" # private subnet AZ us-east-1a (worker-1)
     openshift_version = "4.16.20"
+    auto_repair       = true
     labels            = { "gpu" = "true" }
     autoscaling = {
       enabled      = true
@@ -49,6 +50,7 @@ machine_pools = {
     name              = "gpu-2"
     subnet_id         = "" # private subnet AZ us-east-1b (worker-2)
     openshift_version = "4.16.20"
+    auto_repair       = true
     labels            = { "gpu" = "true" }
     autoscaling = {
       enabled      = true
@@ -64,6 +66,7 @@ machine_pools = {
     name              = "gpu-3"
     subnet_id         = "" # private subnet AZ us-east-1c (worker-3)
     openshift_version = "4.16.20"
+    auto_repair       = true
     labels            = { "gpu" = "true" }
     autoscaling = {
       enabled      = true
@@ -76,3 +79,5 @@ machine_pools = {
     }
   }
 }
+
+identity_providers = {}

@@ -37,6 +37,24 @@ run_write multi-az-private with-infra demo-multi-hcp multi-az-private-with-infra
 run_write multi-az-private no-infra demo-multi-hcp multi-az-private-no-infra
 run_write single-az-public no-infra demo-single-hcp single-az-public-no-infra
 
+run_write_idps() {
+  local out="${TMP}/single-az-public-with-idps"
+  python3 "${PY}" --write --no-infra --reuse-cidrs \
+    --cluster-json "${ROOT}/fixtures/single-az-public/cluster.json" \
+    --machinepools-json "${ROOT}/fixtures/single-az-public/machinepools.json" \
+    --ingress-json "${ROOT}/fixtures/single-az-public/ingress.json" \
+    --versions-json "${ROOT}/fixtures/single-az-public/versions-hosted-cp.json" \
+    --idps-json "${ROOT}/fixtures/idp-mix/classic-idps-inventory.json" \
+    --module-version "${MODULE_VERSION}" \
+    --cluster-name demo-idp-hcp \
+    --output-dir "${out}"
+  if command -v terraform >/dev/null 2>&1; then
+    terraform fmt "${out}" >/dev/null
+  fi
+  diff -ru "${ROOT}/fixtures/golden/single-az-public-with-idps" "${out}"
+}
+run_write_idps
+
 if python3 "${PY}" --dry-run \
   --cluster-json "${ROOT}/fixtures/cidr-overlap/cluster.json" \
   --machinepools-json "${ROOT}/fixtures/cidr-overlap/machinepools.json" \
@@ -55,6 +73,27 @@ python3 "${PY}" --dry-run \
   --module-version "${MODULE_VERSION}" \
   --vpc-cidr 192.168.0.0/16 2>/dev/null && {
   echo "expected vpc/machine mismatch to fail" >&2
+  exit 1
+}
+
+if python3 "${PY}" --write --no-infra --reuse-cidrs \
+  --cluster-json "${ROOT}/fixtures/version-choice/cluster.json" \
+  --machinepools-json "${ROOT}/fixtures/version-choice/machinepools.json" \
+  --ingress-json "${ROOT}/fixtures/version-choice/ingress.json" \
+  --versions-json "${ROOT}/fixtures/version-choice/versions-hosted-cp.json" \
+  --module-version "${MODULE_VERSION}" \
+  --output-dir "${TMP}/version-choice-fail" 2>/dev/null; then
+  echo "expected version-choice write without --openshift-version to fail" >&2
+  exit 1
+fi
+
+python3 "${PY}" --dry-run \
+  --cluster-json "${ROOT}/fixtures/version-choice/cluster.json" \
+  --machinepools-json "${ROOT}/fixtures/version-choice/machinepools.json" \
+  --ingress-json "${ROOT}/fixtures/version-choice/ingress.json" \
+  --versions-json "${ROOT}/fixtures/version-choice/versions-hosted-cp.json" \
+  --module-version "${MODULE_VERSION}" | grep -q "Operator must choose" || {
+  echo "expected version-choice dry-run to list operator version choices" >&2
   exit 1
 }
 

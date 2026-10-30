@@ -31,5 +31,6 @@ module "rosa_hcp" {
   admin_credentials_username = var.admin_credentials_username
   admin_credentials_password = var.admin_credentials_password
 
-  machine_pools = var.machine_pools
+  machine_pools      = var.machine_pools
+  identity_providers = var.identity_providers
 }

@@ -1,5 +1,7 @@
 # Migration notes: Classic `demo-single` → HCP `demo-single-hcp`
 
+Operator runbook: **[README.md](README.md)**.
+
 - Source cluster ID: `fedcba98-7654-3210-fedc-ba9876543210`
 - IAM: new HCP account roles, OIDC, and operator roles with prefix `demo`
 

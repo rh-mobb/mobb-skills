@@ -21,3 +21,7 @@ references/
 # Local Terraform output, provider cache, and downloaded modules
 /tmp/
 **/.terraform/
+
+# Python
+**/__pycache__/
+*.pyc

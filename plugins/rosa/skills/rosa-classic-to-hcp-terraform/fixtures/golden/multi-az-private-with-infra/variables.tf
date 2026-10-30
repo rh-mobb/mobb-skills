@@ -42,6 +42,7 @@ variable "machine_cidr" {
   validation {
     condition = (
       var.vpc_cidr == "" || var.machine_cidr == "" ||
+      var.machine_cidr == var.vpc_cidr ||
       can(cidrcontains(var.vpc_cidr, var.machine_cidr))
     )
     error_message = "machine_cidr must equal or be a subset of vpc_cidr when both are set."
@@ -97,4 +98,10 @@ variable "admin_credentials_password" {
 variable "machine_pools" {
   type    = any
   default = {}
+}
+
+variable "identity_providers" {
+  type        = any
+  default     = {}
+  description = "HCP identity providers (htpasswd replicated from Classic when --idps-json is used)."
 }

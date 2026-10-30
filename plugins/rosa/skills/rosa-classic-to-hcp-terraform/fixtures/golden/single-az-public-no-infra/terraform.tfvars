@@ -26,14 +26,15 @@ worker_disk_size     = 300
 account_role_prefix  = "demo"
 operator_role_prefix = "demo"
 
-admin_credentials_username = ""
-admin_credentials_password = "" # min 14 chars; upper, lower, number or symbol; no spaces
+admin_credentials_username = "admin"
+admin_credentials_password = "REPLACE-ME-14chars-min" # RHCS min 14 chars; set before production apply
 
 machine_pools = {
   memory = {
     name              = "memory"
     subnet_id         = "" # private subnet AZ us-west-2a
     openshift_version = "4.15.40"
+    auto_repair       = true
     replicas          = 2
     labels            = { "workload" = "memory" }
     aws_node_pool = {
@@ -42,3 +43,5 @@ machine_pools = {
     }
   }
 }
+
+identity_providers = {}

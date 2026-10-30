@@ -1,5 +1,7 @@
 # Migration notes: Classic `demo-multi` → HCP `demo-multi-hcp`
 
+Operator runbook: **[README.md](README.md)**.
+
 - Source cluster ID: `01234567-89ab-cdef-0123-456789abcdef`
 - IAM: new HCP account roles, OIDC, and operator roles with prefix `demo`
 
@@ -11,6 +13,7 @@
 - Additional pool gpu-2 -> AZ us-east-1b (private subnet for worker-2).
 - Additional pool gpu-3 -> AZ us-east-1c (private subnet for worker-3).
 - Pool gpu autoscaling on Classic — verify HCP pool autoscaling limits after apply.
+- Synthesized infra machine pools from Classic nodes.infra (no infra MachinePool in ROSA API).
 
 ## Unmapped / manual
 

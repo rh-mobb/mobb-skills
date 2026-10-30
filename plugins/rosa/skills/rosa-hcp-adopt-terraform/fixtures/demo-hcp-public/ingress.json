@@ -1,0 +1,11 @@
+[
+  {
+    "kind": "Ingress",
+    "id": "b2f7",
+    "href": "/api/clusters_mgmt/v1/clusters/01234567-89ab-cdef-0123-456789abcd01/ingresses/b2f7",
+    "dns_name": "apps.demo-hcp-public.demo.p3.openshiftapps.com",
+    "default": true,
+    "listening": "external",
+    "load_balancer_type": "nlb"
+  }
+]

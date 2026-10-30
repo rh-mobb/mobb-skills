@@ -19,18 +19,21 @@ Inspects a **ROSA Classic** cluster with the `rosa` CLI, runs the deterministic 
 
 ## Implementation
 
+**The agent runs every step below** (rosa/ocm, Python generators, `terraform fmt`/`validate`). Do not tell the operator to run skill scripts unless they explicitly want offline copy-paste.
+
 Follow the **rosa-classic-to-hcp-terraform** skill end to end:
 
 1. Use the **rosa-cli** skill for profile / login.
 2. Collect cluster, machine pool, ingress, and hosted-cp version JSON for `<classic-cluster>`.
-3. Run `scripts/classic_to_hcp.py --dry-run` and present the summary.
-4. Ask the operator for target cluster name, infra pools (yes/no), and CIDR reuse vs unique ranges.
-5. Run the script with `--write`, then `terraform fmt` and `terraform validate` in `[output-dir]` (default `./<target-cluster-name>/`).
+3. When the operator may change VPC or cluster CIDRs, or is using `/rosa:classic-to-hcp-full`, run discovery and **summarize_classic_inventory.py** first (see **rosa-classic-network-terraform**).
+4. Run `scripts/classic_to_hcp.py --dry-run` and present the summary together with the inventory briefing.
+5. **Wait for answers**, then ask for target cluster name, infra pools (yes/no), CIDR reuse vs unique ranges, any change to private/public or AZ layout, and **customer VPC endpoints** when discovery lists them (same rules as **hcp-adopt**: ask before network write; **`--skip-endpoints`** if declined; never adopt ROSA HCP control-plane VPCE in `network/`).
+6. Run the script with `--write`, then `terraform fmt` and `terraform validate` in `[output-dir]` (default `./<target-cluster-name>/`).
 
 Set `OUTPUT_DIR` from the optional second argument when provided.
 
 ## Notes
 
 - Refuses clusters where `hypershift.enabled` is true (already HCP).
-- Operator must fill `vpc_cidr`, subnet IDs, and admin credentials in `terraform.tfvars` before apply.
-- For VPC-only Terraform generation, use a separate workflow (out of scope for this command).
+- Operator must fill `vpc_cidr`, subnet IDs, and admin credentials in `terraform.tfvars` before apply — or run **rosa-classic-network-terraform** / `/rosa:classic-to-hcp-full` to generate and merge network values.
+- For VPC-only Terraform generation, use **rosa-classic-network-terraform** (see `/rosa:classic-to-hcp-full` for combined workflow).
