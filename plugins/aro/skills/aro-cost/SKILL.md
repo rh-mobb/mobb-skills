@@ -317,7 +317,7 @@ az aro hcp cluster list -o table
 az aro hcp cluster nodepool list -g <rg> -c <name> -o table
 ```
 
-**Use `workerProfilesStatus`, not `workerProfiles`.** `workerProfiles` is the worker profile sent in the create request, so it reflects install time only and undercounts any cluster scaled or given extra MachineSets since. `workerProfilesStatus` is enriched from the cluster's current MachineSets. Read every entry, not just `[0]`. Where you have cluster access, cross-check with `oc get machinesets -n openshift-machine-api`.
+**Use `workerProfilesStatus`, not `workerProfiles`.** `workerProfiles` is the worker profile sent in the create request, so it reflects install time only and undercounts any cluster scaled or given extra MachineSets since. `workerProfilesStatus` is the resource provider's read-only observed status, enriched from the cluster's MachineSets, but its update latency is not documented. Read every entry, not just `[0]`. Where you have cluster access, cross-check with `oc get machinesets -n openshift-machine-api`, especially after a recent scale event.
 
 ### Detailed Mode — Pool Spec Block
 
