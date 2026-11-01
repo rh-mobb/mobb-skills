@@ -20,7 +20,7 @@ See **[references/rosa-hcp-module-adopt-mapping.md](../../references/rosa-hcp-mo
 | `modules/additional-cp-sg/` | Private cluster VPCE extra SG associations |
 | `variables.tf` | STS ARNs, `oidc_config_id`, subnet inputs, `shared_vpc`, additional SG vars |
 
-Module ↔ OCM/adopt matrix: **[references/rosa-hcp-module-adopt-mapping.md](references/rosa-hcp-module-adopt-mapping.md)**.
+Module ↔ OCM/adopt matrix: **[../../references/rosa-hcp-module-adopt-mapping.md](../../references/rosa-hcp-module-adopt-mapping.md)**.
 
 ## Tests
 
