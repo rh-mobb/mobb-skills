@@ -1,0 +1,20 @@
+{
+  "kind": "hcp_adopt",
+  "aws_region": "ap-southeast-2",
+  "cluster_name": "demo-hcp-public",
+  "cluster_id": "01234567-89ab-cdef-0123-456789abcd01",
+  "module_version": "1.7.6",
+  "source_cluster_name": "",
+  "target_cluster_name": "",
+  "account_role_prefix": "",
+  "network_mode": "",
+  "notes": [
+    "Adopt mode: IAM/OIDC/operator roles are **not** created by Terraform (`create_* = false`).",
+    "Run `terraform plan` after import; expect drift on read-only API fields (state, URLs).",
+    "OCM reserved property keys `rosa_tf_version` / `rosa_tf_commit` are omitted from tfvars (provider-managed).",
+    "Import IDs for node pools use `{cluster_id},{pool_name}` \u2014 verify against RHCS provider docs.",
+    "Node pool autoscaling is active \u2014 `cluster_autoscaler_enabled` is false (HCP scales via node pools)."
+  ],
+  "unmapped": [],
+  "extra_sections": []
+}

@@ -1,0 +1,10 @@
+{
+  "items": [
+    {
+      "id": "apps",
+      "default": true,
+      "listening_method": "internal",
+      "private": true
+    }
+  ]
+}

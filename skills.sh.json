@@ -5,7 +5,7 @@
     {
       "title": "OpenShift",
       "description": "Skills for managing OpenShift clusters via OCM and ROSA",
-      "skills": ["ocm-cli", "rosa-cli", "rosa-cost"]
+      "skills": ["ocm-cli", "rosa-cli", "rosa-cost", "rosa-classic-to-hcp-terraform", "rosa-classic-network-terraform", "rosa-hcp-adopt-terraform"]
     },
     {
       "title": "GitHub",

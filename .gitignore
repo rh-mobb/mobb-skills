@@ -12,8 +12,16 @@
 reports/*
 !reports/example/
 
-# Local references
-references/
+# Local upstream clones (repo root only — committed plugin docs live under plugins/*/references/)
+/references/
 
 # VS Code Local History extension
 .history/
+
+# Local Terraform output, provider cache, and downloaded modules
+/tmp/
+**/.terraform/
+
+# Python
+**/__pycache__/
+*.pyc
