@@ -956,14 +956,32 @@ See Section 2 (Classic Day 2 Machine Pools) and Section 3 (HCP Day 2 Node Pools)
 
 ### create network
 
+**Do not use `rosa create network`.** Build the VPC directly instead (`aws ec2 create-vpc`, subnets, IGW, NAT gateway, route tables), or use Terraform.
+
 ```bash
+# Avoid:
 rosa create network \
   --region us-east-1 \
   --template-dir ./network-templates \
   --param VpcCidr=10.0.0.0/16
 ```
 
-Creates AWS network resources from a CloudFormation template. Used for pre-provisioning VPCs for BYO networking.
+It creates AWS network resources from a CloudFormation template. The problem is teardown: the stack frequently fails to delete because orphaned HCP `*-vpce-private-router` security groups hold the VPC open. The stack lands in `DELETE_FAILED` and each security group has to be deleted by hand before the stack will go. This was observed on every VPC stack created this way in one working session.
+
+```bash
+# When a stack is stuck in DELETE_FAILED, find the orphans:
+aws ec2 describe-security-groups --region "$REGION" \
+  --filters "Name=vpc-id,Values=$VPC_ID" \
+  --query 'SecurityGroups[?GroupName!=`default`].[GroupId,GroupName]' --output text
+# delete any *-vpce-private-router groups, then re-run delete-stack
+```
+
+When a guide or procedure says to run `rosa create network`, substitute a hand-built or Terraform-managed VPC with:
+
+- Public and private subnets in each AZ the cluster will use
+- `kubernetes.io/role/elb=1` on public subnets and `kubernetes.io/role/internal-elb=1` on private subnets
+- An internet gateway, a NAT gateway, and route tables associated with every subnet
+- `--machine-cidr` set to a supernet that contains **all** subnets passed to `--subnet-ids`, or cluster creation fails validation
 
 ### create ocm-role
 

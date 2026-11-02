@@ -1,0 +1,23 @@
+{
+  "kind": "classic_hcp",
+  "aws_region": "us-west-2",
+  "cluster_name": "demo-idp-hcp",
+  "cluster_id": "fedcba98-7654-3210-fedc-ba9876543210",
+  "module_version": "1.7.6",
+  "source_cluster_name": "demo-single",
+  "target_cluster_name": "demo-idp-hcp",
+  "account_role_prefix": "demo",
+  "network_mode": "",
+  "notes": [
+    "IAM prefix shortened from 'demo-idp-hcp' to 'demo' for 64-char role name limit.",
+    "Default pool: single AZ us-west-2a, 2 replica(s).",
+    "Additional pool memory -> AZ us-west-2a (single private subnet)."
+  ],
+  "unmapped": [
+    "Classic subnet IDs (do not reuse): subnet-aaa",
+    "Classic control plane / infra node counts: {\"master\": 1, \"compute\": 2} \u2014 HCP has no customer control plane."
+  ],
+  "extra_sections": [
+    "## Identity providers (Classic \u2192 HCP)\n\n### `developer` (htpasswd)\n- Replicated **2** htpasswd user(s) with **new** random passwords (Classic passwords are not exported from OCM).\n### `corp-oidc` (openid)\n- Generated commented Terraform stub in `identity_providers_optional.tf`. Register a **new** OAuth/OIDC client for the HCP cluster callback URL before enabling.\n### `github-org` (github)\n- Generated commented Terraform stub in `identity_providers_optional.tf`. Register a **new** OAuth/OIDC client for the HCP cluster callback URL before enabling."
+  ]
+}

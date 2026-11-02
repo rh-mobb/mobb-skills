@@ -5,6 +5,14 @@
   },
   "plugins": [
     {
+      "name": "aro",
+      "source": "./plugins/aro",
+      "description": "ARO cost estimation, comparison, and optimization for Standard and HCP clusters.",
+      "version": "0.1.0",
+      "category": "openshift",
+      "keywords": ["aro", "hcp", "cost", "optimization", "azure", "openshift"]
+    },
+    {
       "name": "ocm",
       "source": "./plugins/ocm",
       "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
@@ -16,7 +24,7 @@
       "name": "rosa",
       "source": "./plugins/rosa",
       "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
-      "version": "0.1.0",
+      "version": "0.10.1",
       "category": "openshift",
       "keywords": ["rosa", "hcp", "cost", "optimization", "aws", "openshift"]
     }

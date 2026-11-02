@@ -8,12 +8,21 @@
 # Superpowers scratch
 .superpowers/
 
-# Reports (only example is tracked)
+# Reports (only examples are tracked)
 reports/*
 !reports/example/
+!reports/example-aro/
 
-# Local references
-references/
+# Local upstream clones (repo root only — committed plugin docs live under plugins/*/references/)
+/references/
 
 # VS Code Local History extension
 .history/
+
+# Local Terraform output, provider cache, and downloaded modules
+/tmp/
+**/.terraform/
+
+# Python
+**/__pycache__/
+*.pyc

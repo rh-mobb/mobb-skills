@@ -1,0 +1,21 @@
+{
+  "kind": "classic_hcp",
+  "aws_region": "us-west-2",
+  "cluster_name": "demo-single-hcp",
+  "cluster_id": "fedcba98-7654-3210-fedc-ba9876543210",
+  "module_version": "1.7.6",
+  "source_cluster_name": "demo-single",
+  "target_cluster_name": "demo-single-hcp",
+  "account_role_prefix": "demo",
+  "network_mode": "",
+  "notes": [
+    "IAM prefix shortened from 'demo-single-hcp' to 'demo' for 64-char role name limit.",
+    "Default pool: single AZ us-west-2a, 2 replica(s).",
+    "Additional pool memory -> AZ us-west-2a (single private subnet)."
+  ],
+  "unmapped": [
+    "Classic subnet IDs (do not reuse): subnet-aaa",
+    "Classic control plane / infra node counts: {\"master\": 1, \"compute\": 2} \u2014 HCP has no customer control plane."
+  ],
+  "extra_sections": []
+}

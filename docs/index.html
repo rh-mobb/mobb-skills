@@ -383,6 +383,78 @@ footer a { color: var(--primary); }
   var DATA = {
   "plugins": [
     {
+      "name": "aro",
+      "description": "ARO cost estimation, comparison, and optimization for Standard and HCP clusters.",
+      "version": "0.1.0",
+      "has_readme": true,
+      "commands": [
+        {
+          "name": "cost",
+          "full_name": "aro:cost",
+          "description": "Guided wizard for ARO cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "description_html": "Guided wizard for ARO cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "synopsis": "/aro:cost [what you want to know]",
+          "body_html": "\u003cp\u003eEntry point for ARO cost work. Collects fleet data conversationally, then routes to the appropriate analysis.\u003c/p\u003e\u003cp\u003eUse this when you are not sure which of the other commands you need.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-compare",
+          "full_name": "aro:cost-compare",
+          "description": "Show ARO Standard vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "description_html": "Show ARO Standard vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "synopsis": "/aro:cost-compare [inputs]",
+          "body_html": "\u003cp\u003eRuns the ARO cost formula over the same fleet twice, once as Standard and once as HCP, and shows the results side-by-side with a delta column.\u003c/p\u003e\u003cp\u003eOn ARO the entire delta is three customer-billed control plane VMs and their disks versus the $182.50/month cluster management fee. The OpenShift license and worker costs are identical on both architectures for the same workload.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-estimate",
+          "full_name": "aro:cost-estimate",
+          "description": "Calculate monthly and annual costs for an ARO fleet at its current configuration.",
+          "description_html": "Calculate monthly and annual costs for an ARO fleet at its current configuration.",
+          "synopsis": "/aro:cost-estimate [inputs]",
+          "body_html": "\u003cp\u003eRuns the ARO cost formula over one or more clusters and reports monthly and annual spend, broken down by OpenShift license, control plane VMs and disks, worker VMs, and the HCP cluster management fee where applicable. Worker disks are excluded because they are unchanged by the architecture.\u003c/p\u003e\u003cp\u003eAccepts live Azure CLI cluster data, detailed pool specs, or a high-level worker vCPU budget.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-optimize",
+          "full_name": "aro:cost-optimize",
+          "description": "Rank ARO cost savings opportunities with estimated savings and implementation complexity.",
+          "description_html": "Rank ARO cost savings opportunities with estimated savings and implementation complexity.",
+          "synopsis": "/aro:cost-optimize [inputs]",
+          "body_html": "Produces a ranked list of ARO cost savings opportunities for a fleet, grouped by implementation effort, with estimated annual savings for each."
+        },
+        {
+          "name": "cost-report",
+          "full_name": "aro:cost-report",
+          "description": "Generate a full strategic advisory report for ARO Standard-to-HCP migration with a phased plan and cost timeline.",
+          "description_html": "Generate a full strategic advisory report for ARO Standard-to-HCP migration with a phased plan and cost timeline.",
+          "synopsis": "/aro:cost-report [customer name and fleet data]",
+          "body_html": "Produces a customer-ready strategic advisory report covering current fleet spend, Standard vs HCP economics, ranked optimization opportunities, and a phased migration plan with a month-by-month cost timeline."
+        }
+      ],
+      "skills": [
+        {
+          "name": "aro-cost",
+          "description": "Azure Red Hat OpenShift cost analysis and Standard→HCP migration economics, for single clusters or fleets.\n\nPhase 1 — Cost analysis: estimate Standard or HCP costs, compare the two with a savings delta, rank\noptimization opportunities, and produce strategic migration reports.\n\nPhase 2 — Per-cluster optimization: machine pool breakdowns, ordered recommendations\n(🟢 Quick / 🟡 Medium / 🔴 Long-term), confirmed VM pricing via the Azure Retail Prices API, and fleet\nsummary tables.\n\nAccepts live Azure CLI data, detailed pool specs, or high-level vCPU estimates.\n\nARO specifics: Standard bills three customer-owned control plane VMs that HCP removes, there are no ARM VM\nsizes, scale-to-zero is unsupported, and subscriptions transfer to HCP so the license cancels out of the\ndelta. Also encodes modeled-versus-actual language and a mandatory basis-and-limitations block.\n\nNOT for: general Azure pricing, ROSA (use rosa-cost), or self-managed OpenShift on Azure.\n",
+          "description_html": "\u003cp\u003eAzure Red Hat OpenShift cost analysis and Standard→HCP migration economics, for single clusters or fleets.\u003c/p\u003e\u003cp\u003ePhase 1 — Cost analysis: estimate Standard or HCP costs, compare the two with a savings delta, rank\u003cbr\u003eoptimization opportunities, and produce strategic migration reports.\u003c/p\u003e\u003cp\u003ePhase 2 — Per-cluster optimization: machine pool breakdowns, ordered recommendations\u003cbr\u003e(🟢 Quick / 🟡 Medium / 🔴 Long-term), confirmed VM pricing via the Azure Retail Prices API, and fleet\u003cbr\u003esummary tables.\u003c/p\u003e\u003cp\u003eAccepts live Azure CLI data, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eARO specifics: Standard bills three customer-owned control plane VMs that HCP removes, there are no ARM VM\u003cbr\u003esizes, scale-to-zero is unsupported, and subscriptions transfer to HCP so the license cancels out of the\u003cbr\u003edelta. Also encodes modeled-versus-actual language and a mandatory basis-and-limitations block.\u003c/p\u003e\u003cp\u003eNOT for: general Azure pricing, ROSA (use rosa-cost), or self-managed OpenShift on Azure.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        }
+      ],
+      "agents": [],
+      "hooks": [],
+      "mcp_servers": [],
+      "rules": [],
+      "category": "openshift",
+      "keywords": [
+        "aro",
+        "hcp",
+        "cost",
+        "optimization",
+        "azure",
+        "openshift"
+      ],
+      "author": {
+        "name": "github.com/rh-mobb"
+      }
+    },
+    {
       "name": "ocm",
       "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
       "version": "0.5.0",
@@ -449,9 +521,33 @@ footer a { color: var(--primary); }
     {
       "name": "rosa",
       "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
-      "version": "0.4.0",
+      "version": "0.10.1",
       "has_readme": true,
       "commands": [
+        {
+          "name": "classic-to-hcp",
+          "full_name": "rosa:classic-to-hcp",
+          "description": "Generate Terraform for a new ROSA HCP cluster from a running ROSA Classic cluster (terraform-redhat/rosa-hcp module and tfvars).",
+          "description_html": "Generate Terraform for a new ROSA HCP cluster from a running ROSA Classic cluster (terraform-redhat/rosa-hcp module and tfvars).",
+          "synopsis": "/rosa:classic-to-hcp \u003cclassic-cluster\u003e [output-dir]",
+          "body_html": "Inspects a \u003cstrong\u003eROSA Classic\u003c/strong\u003e cluster with the \u003ccode\u003erosa\u003c/code\u003e CLI, runs the deterministic mapper in the \u003ccode\u003erosa-classic-to-hcp-terraform\u003c/code\u003e skill, and writes a Terraform stack (pinned \u003ccode\u003eterraform-redhat/rosa-hcp/rhcs\u003c/code\u003e module, \u003ccode\u003eterraform.tfvars\u003c/code\u003e, and \u003ccode\u003eMIGRATION.md\u003c/code\u003e). Does not create a VPC, reuse Classic subnet IDs, or run \u003ccode\u003eterraform apply\u003c/code\u003e."
+        },
+        {
+          "name": "classic-to-hcp-full",
+          "full_name": "rosa:classic-to-hcp-full",
+          "description": "Orchestrate Classic network Terraform plus HCP cluster Terraform from one Classic cluster (discover, adopt or copy VPC, map cluster, merge tfvars).",
+          "description_html": "Orchestrate Classic network Terraform plus HCP cluster Terraform from one Classic cluster (discover, adopt or copy VPC, map cluster, merge tfvars).",
+          "synopsis": "/rosa:classic-to-hcp-full \u003cclassic-cluster\u003e [output-dir]",
+          "body_html": "End-to-end \u003cstrong\u003elearn and duplicate\u003c/strong\u003e workflow: discover the Classic cluster&#x27;s AWS network, generate network Terraform (adopt or copy), generate the HCP cluster stack via \u003cstrong\u003erosa-classic-to-hcp-terraform\u003c/strong\u003e, merge subnet wiring into \u003ccode\u003eterraform.tfvars\u003c/code\u003e, and validate both stacks. Does not run \u003ccode\u003eterraform apply\u003c/code\u003e by default."
+        },
+        {
+          "name": "cluster-describe",
+          "full_name": "rosa:cluster-describe",
+          "description": "Describe a ROSA cluster in detail — metadata, machine/node pools, IDPs, ingresses, and upgrade policies.",
+          "description_html": "Describe a ROSA cluster in detail — metadata, machine/node pools, IDPs, ingresses, and upgrade policies.",
+          "synopsis": "/rosa:cluster-describe \u003ccluster\u003e",
+          "body_html": "Provides a comprehensive description of a ROSA cluster using only the \u003ccode\u003erosa\u003c/code\u003e CLI: basic metadata, identity providers, machine pools (Classic) or node pools (HCP), ingresses, and upgrade policies. Works for ROSA Classic and ROSA HCP clusters."
+        },
         {
           "name": "cost",
           "full_name": "rosa:cost",
@@ -491,9 +587,61 @@ footer a { color: var(--primary); }
           "description_html": "Generate a full strategic advisory report for Classic-to-HCP migration with phased plan and month-by-month cost timeline.",
           "synopsis": "/rosa:cost-report [inputs]",
           "body_html": "\u003cp\u003eGenerates a full strategic advisory report for customers migrating from ROSA Classic to HCP. Appropriate for customer-facing engagements where a structured, quantified migration recommendation is required.\u003c/p\u003e\u003cp\u003eThis command is for existing Classic clusters only. For greenfield HCP customers, use \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e or \u003ccode\u003e/rosa:cost-compare\u003c/code\u003e.\u003c/p\u003e\u003cp\u003eAccepts the same inputs as \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e, plus:\u003cbr\u003e- \u003ccode\u003earm_pct=50\u003c/code\u003e — target percentage of fleet to migrate to ARM Graviton after HCP migration (default: 50%)\u003cbr\u003e- \u003ccode\u003eprod_clusters=N\u003c/code\u003e — number of production clusters (drives phase timing)\u003c/p\u003e"
+        },
+        {
+          "name": "delete-cluster",
+          "full_name": "rosa:delete-cluster",
+          "description": "Delete a ROSA cluster and clean up its operator roles and OIDC provider.",
+          "description_html": "Delete a ROSA cluster and clean up its operator roles and OIDC provider.",
+          "synopsis": "/rosa:delete-cluster \u003ccluster\u003e",
+          "body_html": "Deletes a ROSA cluster and performs standard post-delete cleanup (operator roles, OIDC provider). Does NOT remove infrastructure resources like VPCs, NAT gateways, EFS, S3 buckets, or IAM account roles. For full infrastructure teardown, use the \u003ccode\u003erosa-purge-cluster-resources\u003c/code\u003e skill."
+        },
+        {
+          "name": "hcp-adopt",
+          "full_name": "rosa:hcp-adopt",
+          "description": "Generate Terraform to adopt an existing ROSA HCP cluster (terraform-redhat/rosa-hcp module + import blocks); optional VPC adopt via network skill.",
+          "description_html": "Generate Terraform to adopt an existing ROSA HCP cluster (terraform-redhat/rosa-hcp module + import blocks); optional VPC adopt via network skill.",
+          "synopsis": "/rosa:hcp-adopt \u003chcp-cluster\u003e [output-dir]",
+          "body_html": "\u003cp\u003eImport a \u003cstrong\u003erunning ROSA HCP\u003c/strong\u003e cluster into Terraform using the supported \u003cstrong\u003e\u003ccode\u003eterraform-redhat/rosa-hcp/rhcs\u003c/code\u003e\u003c/strong\u003e module. Writes \u003cstrong\u003e\u003ccode\u003eimports.tf\u003c/code\u003e\u003c/strong\u003e, tfvars aligned with live STS/OIDC ARNs, and optional \u003cstrong\u003e\u003ccode\u003enetwork/\u003c/code\u003e\u003c/strong\u003e adopt stack when the operator wants VPC under Terraform too.\u003c/p\u003e\u003cp\u003eDoes not run \u003cstrong\u003e\u003ccode\u003eterraform apply\u003c/code\u003e\u003c/strong\u003e by default.\u003c/p\u003e"
+        },
+        {
+          "name": "list-clusters",
+          "full_name": "rosa:list-clusters",
+          "description": "List all ROSA clusters for the logged-in user.",
+          "description_html": "List all ROSA clusters for the logged-in user.",
+          "synopsis": "/rosa:list-clusters",
+          "body_html": "Lists all ROSA clusters accessible to the currently authenticated user. Scope is limited to clusters within your OCM organization&#x27;s subscription — this command cannot list clusters across other organizations. For cross-organization listing, use the \u003ccode\u003eocm\u003c/code\u003e CLI with a privileged Red Hat account."
+        },
+        {
+          "name": "purge-cluster-resources",
+          "full_name": "rosa:purge-cluster-resources",
+          "description": "Discover and selectively delete ALL AWS resources associated with a ROSA cluster — VPC, NAT, EFS, S3, IAM, Secrets Manager, and more. For orphaned clusters or post-delete cleanup.",
+          "description_html": "Discover and selectively delete ALL AWS resources associated with a ROSA cluster — VPC, NAT, EFS, S3, IAM, Secrets Manager, and more. For orphaned clusters or post-delete cleanup.",
+          "synopsis": "/rosa:purge-cluster-resources \u003ccluster-name\u003e \u003caws-region\u003e",
+          "body_html": "\u003cp\u003eInventories all AWS resources associated with a ROSA cluster by name and tags, then lets the operator select which resource groups to delete. Works whether the cluster is still running, mid-uninstall, or already deleted.\u003c/p\u003e\u003cp\u003eThis is the nuclear option — use \u003ccode\u003e/rosa:delete-cluster\u003c/code\u003e if you only need to delete the cluster itself.\u003c/p\u003e"
+        },
+        {
+          "name": "whoami",
+          "full_name": "rosa:whoami",
+          "description": "Show the currently authenticated ROSA user and account details.",
+          "description_html": "Show the currently authenticated ROSA user and account details.",
+          "synopsis": "/rosa:whoami",
+          "body_html": "Displays the identity of the currently authenticated ROSA user: username, organization, account ID, and API endpoint. Useful to confirm which account is active before running cluster operations."
         }
       ],
       "skills": [
+        {
+          "name": "rosa-classic-network-terraform",
+          "description": "Use when generating Terraform for a ROSA Classic cluster's AWS network (VPC, subnets,\nIGW, NAT, endpoints, TGW, SGs, flow logs) from live inventory, with adopt (import) or\ncopy (greenfield) modes. Merges subnet wiring into HCP terraform.tfvars from\nrosa-classic-to-hcp-terraform. Requires rosa login and AWS credentials for discovery.\n\nNOT for: applying Terraform by default, importing Classic IAM into HCP roles, or\nclusters already on HCP-only network automation without Classic source.\n",
+          "description_html": "\u003cp\u003eUse when generating Terraform for a ROSA Classic cluster&#x27;s AWS network (VPC, subnets,\u003cbr\u003eIGW, NAT, endpoints, TGW, SGs, flow logs) from live inventory, with adopt (import) or\u003cbr\u003ecopy (greenfield) modes. Merges subnet wiring into HCP terraform.tfvars from\u003cbr\u003erosa-classic-to-hcp-terraform. Requires rosa login and AWS credentials for discovery.\u003c/p\u003e\u003cp\u003eNOT for: applying Terraform by default, importing Classic IAM into HCP roles, or\u003cbr\u003eclusters already on HCP-only network automation without Classic source.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
+        {
+          "name": "rosa-classic-to-hcp-terraform",
+          "description": "Use when generating Terraform for a new ROSA HCP cluster from an existing ROSA Classic\ncluster: hosted-cp module, tfvars, machine pool shape, private vs public, cluster-specific\nIAM roles, or Classic-to-HCP migration Terraform. Requires a running Classic cluster and\nrosa login.\n\nNOT for: applying Terraform, creating VPCs, or clusters that are already HCP.\n",
+          "description_html": "\u003cp\u003eUse when generating Terraform for a new ROSA HCP cluster from an existing ROSA Classic\u003cbr\u003ecluster: hosted-cp module, tfvars, machine pool shape, private vs public, cluster-specific\u003cbr\u003eIAM roles, or Classic-to-HCP migration Terraform. Requires a running Classic cluster and\u003cbr\u003erosa login.\u003c/p\u003e\u003cp\u003eNOT for: applying Terraform, creating VPCs, or clusters that are already HCP.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
         {
           "name": "rosa-cli",
           "description": "Command reference, lifecycle sequences, and Classic/HCP behavioral differences for the ROSA CLI.\n\nUse when:\n- Creating, managing, or deleting ROSA Classic or HCP clusters\n- Setting up STS roles, OIDC configs, and operator roles\n- Working with node pools, IDPs, ingress, or autoscaler\n- Scheduling or monitoring cluster upgrades\n- Troubleshooting ROSA CLI commands\n\nCovers all rosa subcommands with exact flags and Classic/HCP parallel sections.\nNOT for: ROSA cost estimation (use rosa-cost skill).\n",
@@ -502,8 +650,20 @@ footer a { color: var(--primary); }
         },
         {
           "name": "rosa-cost",
-          "description": "Pricing data, calculation methodology, and output templates for ROSA cost estimation.\n\nUse when:\n- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\n- Comparing Classic vs HCP costs with a savings delta\n- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\n- Generating strategic advisory reports for Classic→HCP migration engagements\n\nHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\n\nNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\n",
-          "description_html": "\u003cp\u003ePricing data, calculation methodology, and output templates for ROSA cost estimation.\u003c/p\u003e\u003cp\u003eUse when:\u003cbr\u003e- Estimating ROSA Classic or HCP cluster costs for individuals or fleets\u003cbr\u003e- Comparing Classic vs HCP costs with a savings delta\u003cbr\u003e- Identifying cost optimization opportunities (contracts, Karpenter, ARM, Spot)\u003cbr\u003e- Generating strategic advisory reports for Classic→HCP migration engagements\u003c/p\u003e\u003cp\u003eHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\u003c/p\u003e",
+          "description": "Two-phase advisory skill for ROSA cost analysis and per-cluster optimization.\n\nPhase 1 — Cost Analysis:\n- Estimate ROSA Classic or HCP cluster costs for individuals or fleets\n- Compare Classic vs HCP costs with a savings delta\n- Identify top optimization opportunities (contracts, Karpenter, ARM, Spot)\n- Generate strategic cost reports for Classic→HCP migration engagements\n\nPhase 2 — Per-Cluster Optimization Guide:\n- Machine pool breakdown tables per cluster (instance, vCPU, GiB, min→max nodes/vCPU)\n- Ordered recommendations per cluster (🟢 Quick / 🟡 Medium / 🔴 Long-term)\n- Confirmed instance pricing via AWS Pricing MCP\n- Fleet summary tables across all effort levels\n\nHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\n\nSelf-improving: add confirmed pricing and engagement lessons to the registry sections after each engagement so the skill improves over time.\n\nNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\n",
+          "description_html": "\u003cp\u003eTwo-phase advisory skill for ROSA cost analysis and per-cluster optimization.\u003c/p\u003e\u003cp\u003ePhase 1 — Cost Analysis:\u003cbr\u003e- Estimate ROSA Classic or HCP cluster costs for individuals or fleets\u003cbr\u003e- Compare Classic vs HCP costs with a savings delta\u003cbr\u003e- Identify top optimization opportunities (contracts, Karpenter, ARM, Spot)\u003cbr\u003e- Generate strategic cost reports for Classic→HCP migration engagements\u003c/p\u003e\u003cp\u003ePhase 2 — Per-Cluster Optimization Guide:\u003cbr\u003e- Machine pool breakdown tables per cluster (instance, vCPU, GiB, min→max nodes/vCPU)\u003cbr\u003e- Ordered recommendations per cluster (🟢 Quick / 🟡 Medium / 🔴 Long-term)\u003cbr\u003e- Confirmed instance pricing via AWS Pricing MCP\u003cbr\u003e- Fleet summary tables across all effort levels\u003c/p\u003e\u003cp\u003eHandles three input modes: live OCM cluster IDs, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eSelf-improving: add confirmed pricing and engagement lessons to the registry sections after each engagement so the skill improves over time.\u003c/p\u003e\u003cp\u003eNOT for: General AWS pricing questions or non-ROSA OpenShift deployments.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
+        {
+          "name": "rosa-hcp-adopt-terraform",
+          "description": "Use when importing an existing ROSA HCP cluster into Terraform using the\nsupported terraform-redhat/rosa-hcp/rhcs registry module (create_* disabled,\nimport blocks). Optionally pair with rosa-classic-network-terraform adopt mode\nfor the VPC. Requires rosa login, RHCS_TOKEN for plan/apply, and AWS creds\nfor network discovery.\n\nNOT for: ROSA Classic clusters, greenfield HCP create (use rosa-classic-to-hcp-terraform),\nor importing IAM/OIDC resources created outside the module graph.\n",
+          "description_html": "\u003cp\u003eUse when importing an existing ROSA HCP cluster into Terraform using the\u003cbr\u003esupported terraform-redhat/rosa-hcp/rhcs registry module (create_* disabled,\u003cbr\u003eimport blocks). Optionally pair with rosa-classic-network-terraform adopt mode\u003cbr\u003efor the VPC. Requires rosa login, RHCS_TOKEN for plan/apply, and AWS creds\u003cbr\u003efor network discovery.\u003c/p\u003e\u003cp\u003eNOT for: ROSA Classic clusters, greenfield HCP create (use rosa-classic-to-hcp-terraform),\u003cbr\u003eor importing IAM/OIDC resources created outside the module graph.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
+        {
+          "name": "rosa-purge-cluster-resources",
+          "description": "Use when a ROSA cluster's associated AWS resources need full teardown — VPC,\nNAT gateways, EFS, S3 buckets, IAM roles, Secrets Manager, VPC endpoints,\nand more — especially after Terraform state is lost or a cluster was deleted\nwithout cleaning up infrastructure. Works whether the cluster is still live,\nmid-uninstall, or already gone. Discovers resources by naming convention and\nAWS tags, not by IaC state.\n\nNOT for: simple cluster deletion (use /rosa:delete-cluster). NOT for: clusters\nwhose IaC state is intact (use the IaC tool's destroy workflow instead).\n",
+          "description_html": "\u003cp\u003eUse when a ROSA cluster&#x27;s associated AWS resources need full teardown — VPC,\u003cbr\u003eNAT gateways, EFS, S3 buckets, IAM roles, Secrets Manager, VPC endpoints,\u003cbr\u003eand more — especially after Terraform state is lost or a cluster was deleted\u003cbr\u003ewithout cleaning up infrastructure. Works whether the cluster is still live,\u003cbr\u003emid-uninstall, or already gone. Discovers resources by naming convention and\u003cbr\u003eAWS tags, not by IaC state.\u003c/p\u003e\u003cp\u003eNOT for: simple cluster deletion (use /rosa:delete-cluster). NOT for: clusters\u003cbr\u003ewhose IaC state is intact (use the IaC tool&#x27;s destroy workflow instead).\u003c/p\u003e",
           "meta": "License: Apache-2.0"
         }
       ],
@@ -532,7 +692,18 @@ footer a { color: var(--primary); }
       }
     }
   ],
-  "standalone_skills": []
+  "standalone_skills": [
+    {
+      "name": "github-distributed-workflow",
+      "description": "Enforces GitHub best practices for distributed development, including strict branching, semantic commits, and Pull Request generation. Use whenever interacting with Git, committing code, or creating PRs.",
+      "description_html": "Enforces GitHub best practices for distributed development, including strict branching, semantic commits, and Pull Request generation. Use whenever interacting with Git, committing code, or creating PRs."
+    },
+    {
+      "name": "mobb-create-deck",
+      "description": "Use when creating a presentation deck from a situation or existing project, before writing any slides—interview the user to clarify intent, audience, and scope",
+      "description_html": "Use when creating a presentation deck from a situation or existing project, before writing any slides—interview the user to clarify intent, audience, and scope"
+    }
+  ]
 };
   var IS_MARKETPLACE = true;
   </script>

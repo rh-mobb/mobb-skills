@@ -2,12 +2,17 @@
 
 ROSA cost estimation and optimization plugin for the MOBB team.
 
-Supports ROSA Classic and ROSA HCP cost calculation for individual clusters and fleets.
+Supports ROSA Classic and ROSA HCP cost calculation for individual clusters and fleets. Terraform generation for Classic→HCP and HCP adopt uses the official [`terraform-redhat/rosa-hcp/rhcs`](https://github.com/terraform-redhat/terraform-rhcs-rosa-hcp) module — see **[terraform.md](terraform.md)** for commands, **[examples/](../../examples/rosa/)** for anonymized sample output, and **[references/rosa-hcp-module-adopt-mapping.md](references/rosa-hcp-module-adopt-mapping.md)** for upstream module ↔ adopt coverage. Cluster deletion and selective cleanup of leftover AWS resources (orphaned VPC, NAT, IAM, etc.) use **`/rosa:delete-cluster`** and **`/rosa:purge-cluster-resources`**.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
+| `/rosa:classic-to-hcp` | Generate HCP Terraform (rosa-hcp module + tfvars) from a Classic cluster |
+| `/rosa:classic-to-hcp-full` | Network discover/adopt or copy + HCP stack + merged tfvars |
+| `/rosa:hcp-adopt` | Adopt an **existing** HCP cluster (+ optional VPC adopt) with import blocks |
+| `/rosa:delete-cluster` | Delete a cluster and its operator roles and OIDC provider |
+| `/rosa:purge-cluster-resources` | Inventory and selectively delete leftover AWS resources |
 | `/rosa:cost` | Guided wizard — collects data conversationally, produces full analysis |
 | `/rosa:cost-estimate` | Calculate monthly/annual costs for a fleet |
 | `/rosa:cost-compare` | Classic vs HCP side-by-side with savings delta |

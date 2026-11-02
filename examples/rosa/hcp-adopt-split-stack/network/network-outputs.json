@@ -1,0 +1,17 @@
+{
+  "vpc_id": "vpc-0a1b2c3d4e5f67890",
+  "vpc_cidr": "10.2.0.0/16",
+  "aws_subnet_ids": [
+    "subnet-0aaa1111private2a",
+    "subnet-0bbb2222public2a"
+  ],
+  "private_subnet_ids_by_az": {
+    "ap-southeast-2a": "subnet-0aaa1111private2a"
+  },
+  "mode": "adopt",
+  "classic_subnet_ids": [
+    "subnet-0aaa1111private2a",
+    "subnet-0bbb2222public2a"
+  ],
+  "cluster_state": "ready"
+}
