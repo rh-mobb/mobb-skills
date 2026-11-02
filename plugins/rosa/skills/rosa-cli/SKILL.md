@@ -23,6 +23,59 @@ metadata:
 
 Cite https://docs.openshift.com/rosa/rosa_cli/rosa-cli-about.html when presenting CLI guidance. Commands in this skill are current as of ROSA CLI v1.2 — run `rosa version` and compare against https://github.com/openshift/rosa/releases to verify currency before advising customers.
 
+## Section 0: Runtime Behavior
+
+### Tmux-first for long-running operations
+
+Before starting any cluster creation or deletion, check whether a tmux session is available via the tmux MCP tools:
+
+```
+mcp__tmux__list-sessions   → check for active sessions
+mcp__tmux__list-windows    → find a suitable window
+mcp__tmux__create-window   → open a dedicated monitoring window
+mcp__tmux__execute-command → run log-watching commands in that pane
+```
+
+**If tmux is available:**
+
+1. Create a dedicated window named `rosa-<cluster-name>` in the existing session.
+2. Run the appropriate log-watch command in that pane — it exits automatically when the operation completes or errors:
+   - Cluster install: `rosa logs install --cluster <name> --watch`
+   - Cluster uninstall: `rosa logs uninstall --cluster <name> --watch`
+3. Use `mcp__tmux__capture-pane` periodically to read recent log lines and surface key transitions to the user.
+4. Do NOT send C-c or attempt to restart the watch — if the pane shows a shell prompt, the command exited naturally (install finished or failed). The `rosa describe cluster` state check is the authoritative signal; treat a shell prompt in the pane as confirmation the watch completed.
+
+**If tmux is not available:**
+
+Use `ScheduleWakeup` to poll every 5 minutes until the operation completes:
+
+```
+ScheduleWakeup(delaySeconds=300, reason="polling cz-spot install state", prompt="<original loop prompt>")
+```
+
+Each wake-up, run:
+```bash
+rosa describe cluster --cluster <name>    # check State field
+rosa logs install --cluster <name> --tail 20   # surface recent log lines
+```
+
+### Terminal states
+
+| Operation | Done (success) | Done (failure) |
+|---|---|---|
+| Create | `State: ready` | `State: error` |
+| Delete | cluster not found in `rosa describe` | `State: error` |
+
+Stop polling and report outcome when either terminal state is reached.
+
+### Status reporting cadence
+
+- Report immediately on state transitions (e.g., `installing` → `ready`)
+- Surface any ERROR or WARN lines from logs on each poll
+- Do not spam the user with identical status lines — only report when something changes
+
+---
+
 ## Section 1: Authentication & Config
 
 ### `rosa login`
@@ -107,7 +160,55 @@ Reads and writes individual keys in the active OCM config file. Useful for scrip
 
 ## Section 2: Classic Cluster Lifecycle
 
-### Overview
+### Intent Evaluation (Classic only)
+
+Before guiding a user through Classic cluster creation, evaluate their intent:
+
+**Use the Quick Start path (Section 2, Quick Start) when:**
+- The request is obviously dev/test or exploratory ("spin up a cluster", "quick cluster", "just testing")
+- The user says they want ROSA to manage networking/VPC
+- No custom networking, private link, BYO VPC, or compliance requirements are mentioned
+
+**Ask clarifying questions when intent is ambiguous.** The key question:
+
+> "Do you want to create a VPC, or let the ROSA CLI manage networking automatically?"
+
+Other useful clarifying questions (only ask what's relevant):
+- "Is this for dev/test or production?"
+- "Do you need a private cluster or private link?"
+- "Do you have existing account-roles/OIDC config to reuse, or starting fresh?"
+
+If the user needs a custom VPC, private cluster, BYO OIDC config, or fine-grained IAM control, walk through the full Day 0 sequence instead of Quick Start.
+
+---
+
+### Quick Start (auto mode — dev/test)
+
+Two commands create a fully functional Classic cluster. ROSA manages the VPC, OIDC config, operator roles, and OIDC provider automatically.
+
+```bash
+# Step 1: Create account-level IAM roles (once per AWS account)
+rosa create account-roles --classic --mode auto
+
+# Step 2: Create the cluster — operator roles and OIDC provider are created automatically
+rosa create cluster --cluster-name <CLUSTER_NAME> --sts --mode auto --yes
+```
+
+Then monitor progress using the tmux-first strategy in Section 0 (open a dedicated tmux window for `--watch`, or fall back to 5-minute ScheduleWakeup polling with `rosa describe` + `rosa logs --tail`).
+
+**When `--mode auto` is used on `create cluster`:**
+- Operator IAM roles are created automatically
+- OIDC provider is created automatically
+- A Red Hat-managed OIDC config is created and linked
+- AWS VPC and subnets are provisioned by ROSA
+
+The latest stable OpenShift version is installed by default. To pin a version, add `--version 4.16.20`.
+
+**Limitation:** Auto mode uses defaults for region (us-east-1), instance type, replica count, and networking. For any customization use the full Day 0 sequence below.
+
+---
+
+### Overview (Full sequence)
 
 Classic ROSA uses STS (Security Token Service) for AWS permissions. The Day 0 sequence must be followed in order — each step creates prerequisites for the next.
 
@@ -121,6 +222,7 @@ Day 2 operations (node pools, IDPs, ingress, upgrades) are independent and can r
 
 ```bash
 rosa create account-roles \
+  --classic \
   --mode auto \
   --prefix ManagedOpenShift \
   --version 4.16 \
@@ -133,6 +235,7 @@ Creates the IAM roles that allow ROSA to manage AWS resources on behalf of the c
 
 | Flag | Purpose |
 |---|---|
+| `--classic` | Create Classic-specific account roles (use `--hosted-cp` for HCP) |
 | `--mode auto\|manual` | `auto`: creates roles immediately; `manual`: prints shell commands |
 | `--prefix <string>` | IAM role name prefix (default: `ManagedOpenShift`) |
 | `--version <string>` | OCP version (e.g., `4.16`) — determines policy ARNs |
@@ -262,7 +365,7 @@ rosa logs install --cluster <name|id> --watch
 rosa logs install --cluster <name|id> --tail <n>
 ```
 
-Streams or tails the cluster installation logs. Use `--watch` to follow in real time.
+Streams or tails the cluster installation logs. Follow the tmux-first monitoring strategy in Section 0: open a dedicated tmux window running `--watch`, or fall back to 5-minute ScheduleWakeup polling. Classic clusters take ~52 minutes.
 
 ### Day 2: Describe Cluster
 
@@ -438,17 +541,17 @@ Hibernation stops worker nodes to reduce EC2 costs while preserving cluster conf
 
 ### Delete Teardown (Classic)
 
-Delete in reverse order. The cluster must be deleted before operator-roles and OIDC config.
+Delete in reverse order. Wait for the cluster to finish deleting before removing IAM roles and OIDC resources — the installer and operator roles are required to clean up cluster-provisioned AWS resources.
 
 ```bash
-# 1. Delete cluster
+# 1. Delete cluster (wait for completion before proceeding)
 rosa delete cluster --cluster <name|id> --watch --yes
 
-# 2. Delete operator roles
-rosa delete operator-roles --cluster <name|id> --mode auto --yes
-
-# 3. Delete OIDC provider
+# 2. Delete OIDC provider
 rosa delete oidc-provider --cluster <name|id> --mode auto --yes
+
+# 3. Delete operator roles
+rosa delete operator-roles --cluster <name|id> --mode auto --yes
 
 # 4. Delete OIDC config (if no other clusters use it)
 rosa delete oidc-config --oidc-config-id <id> --mode auto --yes
@@ -561,7 +664,7 @@ HCP does not require a separate `rosa create oidc-provider` step. The OIDC provi
 rosa logs install --cluster <name|id> --watch
 ```
 
-Same command as Classic; HCP installs in ~15 minutes.
+Same command as Classic; HCP installs in ~15 minutes. Follow the tmux-first monitoring strategy in Section 0.
 
 ### Day 2: Node Pools (HCP)
 
@@ -1424,8 +1527,11 @@ rosa list access-requests
 ### list account-roles
 
 ```bash
-rosa list account-roles --prefix ManagedOpenShift
+rosa list account-roles
+rosa list account-roles --version 4.16
 ```
+
+Note: `--prefix` is not a valid flag for this command. Filter by version with `--version`, or grep output by prefix name.
 
 ### list addon
 
@@ -1576,6 +1682,14 @@ rosa list upgrade --cluster <name|id>
 ```
 
 Lists available upgrade versions for a cluster.
+
+### list users
+
+```bash
+rosa list users --cluster <name|id>
+```
+
+Lists users with cluster-admin or dedicated-admin roles granted via `rosa grant user`. Useful to verify role assignments after granting access.
 
 ### list user-roles
 
