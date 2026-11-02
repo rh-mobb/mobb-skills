@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-01-01T00:00:00+00:00",
+  "source": {
+    "cluster_name": "demo-multi-classic",
+    "cluster_id": "clusterfixture001",
+    "infra_id": "infra-fixture-hz24m",
+    "region": "us-east-1",
+    "private_cluster": false,
+    "cluster_state": "ready"
+  },
+  "vpc": {
+    "id": "vpc-fixture001",
+    "cidr_block": "10.0.0.0/16",
+    "tags": {
+      "Name": "demo-multi-classic",
+      "Project": "demo"
+    }
+  },
+  "subnets": [
+    {
+      "id": "subnet-private-a",
+      "availability_zone": "us-east-1a",
+      "cidr_block": "10.0.0.0/20",
+      "public": false,
+      "map_public_ip_on_launch": false,
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1a"
+      }
+    },
+    {
+      "id": "subnet-private-b",
+      "availability_zone": "us-east-1b",
+      "cidr_block": "10.0.16.0/20",
+      "public": false,
+      "map_public_ip_on_launch": false,
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1b"
+      }
+    },
+    {
+      "id": "subnet-private-c",
+      "availability_zone": "us-east-1c",
+      "cidr_block": "10.0.32.0/20",
+      "public": false,
+      "map_public_ip_on_launch": false,
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1c"
+      }
+    },
+    {
+      "id": "subnet-public-a",
+      "availability_zone": "us-east-1a",
+      "cidr_block": "10.0.48.0/20",
+      "public": true,
+      "map_public_ip_on_launch": true,
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1a",
+        "kubernetes.io/role/elb": "1"
+      }
+    },
+    {
+      "id": "subnet-public-b",
+      "availability_zone": "us-east-1b",
+      "cidr_block": "10.0.64.0/20",
+      "public": true,
+      "map_public_ip_on_launch": true,
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1b",
+        "kubernetes.io/role/elb": "1"
+      }
+    },
+    {
+      "id": "subnet-public-c",
+      "availability_zone": "us-east-1c",
+      "cidr_block": "10.0.80.0/20",
+      "public": true,
+      "map_public_ip_on_launch": true,
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1c",
+        "kubernetes.io/role/elb": "1"
+      }
+    }
+  ],
+  "internet_gateways": [
+    {
+      "id": "igw-fixture001",
+      "tags": {
+        "Name": "demo-multi-classic"
+      }
+    }
+  ],
+  "nat_gateways": [
+    {
+      "id": "nat-fixture-a",
+      "subnet_id": "subnet-public-a",
+      "eip_allocation_id": "eipalloc-fixture-a",
+      "state": "available",
+      "tags": {}
+    },
+    {
+      "id": "nat-fixture-b",
+      "subnet_id": "subnet-public-b",
+      "eip_allocation_id": "eipalloc-fixture-b",
+      "state": "available",
+      "tags": {}
+    },
+    {
+      "id": "nat-fixture-c",
+      "subnet_id": "subnet-public-c",
+      "eip_allocation_id": "eipalloc-fixture-c",
+      "state": "available",
+      "tags": {}
+    }
+  ],
+  "route_tables": [
+    {
+      "id": "rtb-private-a",
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1a"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "nat_gateway_id": "nat-fixture-a"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-private-a",
+          "main": false,
+          "association_id": "rtbassoc-private-a"
+        }
+      ]
+    },
+    {
+      "id": "rtb-private-b",
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1b"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "nat_gateway_id": "nat-fixture-b"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-private-b",
+          "main": false,
+          "association_id": "rtbassoc-private-b"
+        }
+      ]
+    },
+    {
+      "id": "rtb-private-c",
+      "tags": {
+        "Name": "demo-multi-classic-private-us-east-1c"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "nat_gateway_id": "nat-fixture-c"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-private-c",
+          "main": false,
+          "association_id": "rtbassoc-private-c"
+        }
+      ]
+    },
+    {
+      "id": "rtb-public-a",
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1a"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "gateway_id": "igw-fixture001"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-public-a",
+          "main": false,
+          "association_id": "rtbassoc-public-a"
+        }
+      ]
+    },
+    {
+      "id": "rtb-public-b",
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1b"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "gateway_id": "igw-fixture001"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-public-b",
+          "main": false,
+          "association_id": "rtbassoc-public-b"
+        }
+      ]
+    },
+    {
+      "id": "rtb-public-c",
+      "tags": {
+        "Name": "demo-multi-classic-public-us-east-1c"
+      },
+      "routes": [
+        {
+          "destination_cidr": "10.0.0.0/16"
+        },
+        {
+          "destination_cidr": "0.0.0.0/0",
+          "gateway_id": "igw-fixture001"
+        }
+      ],
+      "associations": [
+        {
+          "subnet_id": "subnet-public-c",
+          "main": false,
+          "association_id": "rtbassoc-public-c"
+        }
+      ]
+    }
+  ],
+  "vpc_endpoints": [],
+  "security_groups": [],
+  "transit_gateway_attachments": [],
+  "flow_logs": [],
+  "warnings": [],
+  "rosa_hcp_wiring": {
+    "aws_subnet_ids": [
+      "subnet-private-a",
+      "subnet-private-b",
+      "subnet-private-c",
+      "subnet-public-a",
+      "subnet-public-b",
+      "subnet-public-c"
+    ],
+    "private_subnet_ids_by_az": {
+      "us-east-1a": "subnet-private-a",
+      "us-east-1b": "subnet-private-b",
+      "us-east-1c": "subnet-private-c"
+    },
+    "private_subnet_ids": [
+      "subnet-private-a",
+      "subnet-private-b",
+      "subnet-private-c"
+    ],
+    "public_subnet_ids": [
+      "subnet-public-a",
+      "subnet-public-b",
+      "subnet-public-c"
+    ]
+  }
+}

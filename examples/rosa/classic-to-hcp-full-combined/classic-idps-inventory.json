@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-01-15T12:00:00+00:00",
+  "cluster_id": "fixture-classic",
+  "identity_providers": [
+    {
+      "name": "developer",
+      "id": "htpasswd-dev",
+      "type": "htpasswd",
+      "mapping_method": "claim",
+      "href": "/api/clusters_mgmt/v1/clusters/fixture/identity_providers/htpasswd-dev",
+      "detail": {},
+      "htpasswd_users": [
+        { "username": "dev-user" },
+        { "username": "qa-user" }
+      ]
+    },
+    {
+      "name": "corp-oidc",
+      "id": "openid-corp",
+      "type": "openid",
+      "mapping_method": "claim",
+      "href": "/api/clusters_mgmt/v1/clusters/fixture/identity_providers/openid-corp",
+      "detail": {
+        "client_id": "rosa-classic-client-id",
+        "issuer": "https://login.example.com/oauth2/default",
+        "claims": {
+          "email": ["email"],
+          "preferred_username": ["preferred_username"],
+          "groups": ["groups"]
+        }
+      }
+    },
+    {
+      "name": "github-org",
+      "id": "github-1",
+      "type": "github",
+      "mapping_method": "claim",
+      "href": "/api/clusters_mgmt/v1/clusters/fixture/identity_providers/github-1",
+      "detail": {
+        "client_id": "github-oauth-client-id-example",
+        "hostname": "github.com"
+      }
+    }
+  ]
+}

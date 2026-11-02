@@ -1,0 +1,24 @@
+{
+  "kind": "classic_hcp",
+  "aws_region": "us-east-1",
+  "cluster_name": "demo-multi-hcp",
+  "cluster_id": "01234567-89ab-cdef-0123-456789abcdef",
+  "module_version": "1.7.6",
+  "source_cluster_name": "demo-multi",
+  "target_cluster_name": "demo-multi-hcp",
+  "account_role_prefix": "demo",
+  "network_mode": "",
+  "notes": [
+    "IAM prefix shortened from 'demo-multi-hcp' to 'demo' for 64-char role name limit.",
+    "Default pool will materialize as worker-1 .. worker-3 with 2 replica(s) each (total 6).",
+    "Additional pool gpu-1 -> AZ us-east-1a (private subnet for worker-1).",
+    "Additional pool gpu-2 -> AZ us-east-1b (private subnet for worker-2).",
+    "Additional pool gpu-3 -> AZ us-east-1c (private subnet for worker-3).",
+    "Pool gpu autoscaling on Classic \u2014 verify HCP pool autoscaling limits after apply."
+  ],
+  "unmapped": [
+    "Classic subnet IDs (do not reuse): subnet-private-a, subnet-private-b, subnet-private-c",
+    "Classic control plane / infra node counts: {\"master\": 3, \"infra\": 3, \"compute\": 6} \u2014 HCP has no customer control plane."
+  ],
+  "extra_sections": []
+}

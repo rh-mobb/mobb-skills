@@ -1,0 +1,20 @@
+{
+  "vpc_id": "${aws_vpc.this.id}",
+  "vpc_cidr": "10.1.0.0/16",
+  "aws_subnet_ids": "see terraform outputs after apply",
+  "private_subnet_ids_by_az": {
+    "ap-southeast-2a": "subnet-041b27bf8c76685eb",
+    "ap-southeast-2b": "subnet-08388a612d5f23b98",
+    "ap-southeast-2c": "subnet-0b8753db7e124d2d8"
+  },
+  "mode": "copy",
+  "classic_subnet_ids": [
+    "subnet-041b27bf8c76685eb",
+    "subnet-04a0c4ee61ea198e2",
+    "subnet-0b8753db7e124d2d8",
+    "subnet-08a334b8972a53c88",
+    "subnet-0ee675543e89d0972",
+    "subnet-08388a612d5f23b98"
+  ],
+  "cluster_state": "ready"
+}

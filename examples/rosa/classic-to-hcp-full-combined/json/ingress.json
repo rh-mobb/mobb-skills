@@ -1,0 +1,9 @@
+{
+  "items": [
+    {
+      "id": "apps",
+      "default": true,
+      "listening_method": "external"
+    }
+  ]
+}

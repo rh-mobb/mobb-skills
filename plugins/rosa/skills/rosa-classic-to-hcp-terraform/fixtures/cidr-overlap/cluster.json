@@ -1,0 +1,15 @@
+{
+  "id": "bad-cidr",
+  "name": "bad-cidr",
+  "multi_az": false,
+  "hypershift": { "enabled": false },
+  "region": { "id": "us-east-1" },
+  "version": { "raw_id": "4.16.20", "channel_group": "stable" },
+  "network": {
+    "machine_cidr": "10.0.0.0/16",
+    "pod_cidr": "10.0.128.0/17",
+    "service_cidr": "172.30.0.0/16",
+    "host_prefix": 23
+  },
+  "aws": {}
+}
