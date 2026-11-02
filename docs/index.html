@@ -383,6 +383,78 @@ footer a { color: var(--primary); }
   var DATA = {
   "plugins": [
     {
+      "name": "aro",
+      "description": "ARO cost estimation, comparison, and optimization for Standard and HCP clusters.",
+      "version": "0.1.0",
+      "has_readme": true,
+      "commands": [
+        {
+          "name": "cost",
+          "full_name": "aro:cost",
+          "description": "Guided wizard for ARO cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "description_html": "Guided wizard for ARO cost estimation, comparison, and optimization. Collects data conversationally and routes to the right analysis.",
+          "synopsis": "/aro:cost [what you want to know]",
+          "body_html": "\u003cp\u003eEntry point for ARO cost work. Collects fleet data conversationally, then routes to the appropriate analysis.\u003c/p\u003e\u003cp\u003eUse this when you are not sure which of the other commands you need.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-compare",
+          "full_name": "aro:cost-compare",
+          "description": "Show ARO Standard vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "description_html": "Show ARO Standard vs HCP costs side-by-side for the same fleet, with migration savings.",
+          "synopsis": "/aro:cost-compare [inputs]",
+          "body_html": "\u003cp\u003eRuns the ARO cost formula over the same fleet twice, once as Standard and once as HCP, and shows the results side-by-side with a delta column.\u003c/p\u003e\u003cp\u003eOn ARO the entire delta is three customer-billed control plane VMs and their disks versus the $182.50/month cluster management fee. The OpenShift license and worker costs are identical on both architectures for the same workload.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-estimate",
+          "full_name": "aro:cost-estimate",
+          "description": "Calculate monthly and annual costs for an ARO fleet at its current configuration.",
+          "description_html": "Calculate monthly and annual costs for an ARO fleet at its current configuration.",
+          "synopsis": "/aro:cost-estimate [inputs]",
+          "body_html": "\u003cp\u003eRuns the ARO cost formula over one or more clusters and reports monthly and annual spend, broken down by OpenShift license, control plane VMs and disks, worker VMs, and the HCP cluster management fee where applicable. Worker disks are excluded because they are unchanged by the architecture.\u003c/p\u003e\u003cp\u003eAccepts live Azure CLI cluster data, detailed pool specs, or a high-level worker vCPU budget.\u003c/p\u003e"
+        },
+        {
+          "name": "cost-optimize",
+          "full_name": "aro:cost-optimize",
+          "description": "Rank ARO cost savings opportunities with estimated savings and implementation complexity.",
+          "description_html": "Rank ARO cost savings opportunities with estimated savings and implementation complexity.",
+          "synopsis": "/aro:cost-optimize [inputs]",
+          "body_html": "Produces a ranked list of ARO cost savings opportunities for a fleet, grouped by implementation effort, with estimated annual savings for each."
+        },
+        {
+          "name": "cost-report",
+          "full_name": "aro:cost-report",
+          "description": "Generate a full strategic advisory report for ARO Standard-to-HCP migration with a phased plan and cost timeline.",
+          "description_html": "Generate a full strategic advisory report for ARO Standard-to-HCP migration with a phased plan and cost timeline.",
+          "synopsis": "/aro:cost-report [customer name and fleet data]",
+          "body_html": "Produces a customer-ready strategic advisory report covering current fleet spend, Standard vs HCP economics, ranked optimization opportunities, and a phased migration plan with a month-by-month cost timeline."
+        }
+      ],
+      "skills": [
+        {
+          "name": "aro-cost",
+          "description": "Azure Red Hat OpenShift cost analysis and Standard→HCP migration economics, for single clusters or fleets.\n\nPhase 1 — Cost analysis: estimate Standard or HCP costs, compare the two with a savings delta, rank\noptimization opportunities, and produce strategic migration reports.\n\nPhase 2 — Per-cluster optimization: machine pool breakdowns, ordered recommendations\n(🟢 Quick / 🟡 Medium / 🔴 Long-term), confirmed VM pricing via the Azure Retail Prices API, and fleet\nsummary tables.\n\nAccepts live Azure CLI data, detailed pool specs, or high-level vCPU estimates.\n\nARO specifics: Standard bills three customer-owned control plane VMs that HCP removes, there are no ARM VM\nsizes, scale-to-zero is unsupported, and subscriptions transfer to HCP so the license cancels out of the\ndelta. Also encodes modeled-versus-actual language and a mandatory basis-and-limitations block.\n\nNOT for: general Azure pricing, ROSA (use rosa-cost), or self-managed OpenShift on Azure.\n",
+          "description_html": "\u003cp\u003eAzure Red Hat OpenShift cost analysis and Standard→HCP migration economics, for single clusters or fleets.\u003c/p\u003e\u003cp\u003ePhase 1 — Cost analysis: estimate Standard or HCP costs, compare the two with a savings delta, rank\u003cbr\u003eoptimization opportunities, and produce strategic migration reports.\u003c/p\u003e\u003cp\u003ePhase 2 — Per-cluster optimization: machine pool breakdowns, ordered recommendations\u003cbr\u003e(🟢 Quick / 🟡 Medium / 🔴 Long-term), confirmed VM pricing via the Azure Retail Prices API, and fleet\u003cbr\u003esummary tables.\u003c/p\u003e\u003cp\u003eAccepts live Azure CLI data, detailed pool specs, or high-level vCPU estimates.\u003c/p\u003e\u003cp\u003eARO specifics: Standard bills three customer-owned control plane VMs that HCP removes, there are no ARM VM\u003cbr\u003esizes, scale-to-zero is unsupported, and subscriptions transfer to HCP so the license cancels out of the\u003cbr\u003edelta. Also encodes modeled-versus-actual language and a mandatory basis-and-limitations block.\u003c/p\u003e\u003cp\u003eNOT for: general Azure pricing, ROSA (use rosa-cost), or self-managed OpenShift on Azure.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        }
+      ],
+      "agents": [],
+      "hooks": [],
+      "mcp_servers": [],
+      "rules": [],
+      "category": "openshift",
+      "keywords": [
+        "aro",
+        "hcp",
+        "cost",
+        "optimization",
+        "azure",
+        "openshift"
+      ],
+      "author": {
+        "name": "github.com/rh-mobb"
+      }
+    },
+    {
       "name": "ocm",
       "description": "OpenShift Cluster Manager (OCM) CLI operations and cluster management",
       "version": "0.5.0",
