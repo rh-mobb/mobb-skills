@@ -521,7 +521,7 @@ footer a { color: var(--primary); }
     {
       "name": "rosa",
       "description": "ROSA cost estimation, comparison, and optimization for Classic and HCP clusters.",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "has_readme": true,
       "commands": [
         {
@@ -589,6 +589,14 @@ footer a { color: var(--primary); }
           "body_html": "\u003cp\u003eGenerates a full strategic advisory report for customers migrating from ROSA Classic to HCP. Appropriate for customer-facing engagements where a structured, quantified migration recommendation is required.\u003c/p\u003e\u003cp\u003eThis command is for existing Classic clusters only. For greenfield HCP customers, use \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e or \u003ccode\u003e/rosa:cost-compare\u003c/code\u003e.\u003c/p\u003e\u003cp\u003eAccepts the same inputs as \u003ccode\u003e/rosa:cost-estimate\u003c/code\u003e, plus:\u003cbr\u003e- \u003ccode\u003earm_pct=50\u003c/code\u003e — target percentage of fleet to migrate to ARM Graviton after HCP migration (default: 50%)\u003cbr\u003e- \u003ccode\u003eprod_clusters=N\u003c/code\u003e — number of production clusters (drives phase timing)\u003c/p\u003e"
         },
         {
+          "name": "delete-cluster",
+          "full_name": "rosa:delete-cluster",
+          "description": "Delete a ROSA cluster and clean up its operator roles and OIDC provider.",
+          "description_html": "Delete a ROSA cluster and clean up its operator roles and OIDC provider.",
+          "synopsis": "/rosa:delete-cluster \u003ccluster\u003e",
+          "body_html": "Deletes a ROSA cluster and performs standard post-delete cleanup (operator roles, OIDC provider). Does NOT remove infrastructure resources like VPCs, NAT gateways, EFS, S3 buckets, or IAM account roles. For full infrastructure teardown, use the \u003ccode\u003erosa-purge-cluster-resources\u003c/code\u003e skill."
+        },
+        {
           "name": "hcp-adopt",
           "full_name": "rosa:hcp-adopt",
           "description": "Generate Terraform to adopt an existing ROSA HCP cluster (terraform-redhat/rosa-hcp module + import blocks); optional VPC adopt via network skill.",
@@ -603,6 +611,14 @@ footer a { color: var(--primary); }
           "description_html": "List all ROSA clusters for the logged-in user.",
           "synopsis": "/rosa:list-clusters",
           "body_html": "Lists all ROSA clusters accessible to the currently authenticated user. Scope is limited to clusters within your OCM organization&#x27;s subscription — this command cannot list clusters across other organizations. For cross-organization listing, use the \u003ccode\u003eocm\u003c/code\u003e CLI with a privileged Red Hat account."
+        },
+        {
+          "name": "purge-cluster-resources",
+          "full_name": "rosa:purge-cluster-resources",
+          "description": "Discover and selectively delete ALL AWS resources associated with a ROSA cluster — VPC, NAT, EFS, S3, IAM, Secrets Manager, and more. For orphaned clusters or post-delete cleanup.",
+          "description_html": "Discover and selectively delete ALL AWS resources associated with a ROSA cluster — VPC, NAT, EFS, S3, IAM, Secrets Manager, and more. For orphaned clusters or post-delete cleanup.",
+          "synopsis": "/rosa:purge-cluster-resources \u003ccluster-name\u003e \u003caws-region\u003e",
+          "body_html": "\u003cp\u003eInventories all AWS resources associated with a ROSA cluster by name and tags, then lets the operator select which resource groups to delete. Works whether the cluster is still running, mid-uninstall, or already deleted.\u003c/p\u003e\u003cp\u003eThis is the nuclear option — use \u003ccode\u003e/rosa:delete-cluster\u003c/code\u003e if you only need to delete the cluster itself.\u003c/p\u003e"
         },
         {
           "name": "whoami",
@@ -642,6 +658,12 @@ footer a { color: var(--primary); }
           "name": "rosa-hcp-adopt-terraform",
           "description": "Use when importing an existing ROSA HCP cluster into Terraform using the\nsupported terraform-redhat/rosa-hcp/rhcs registry module (create_* disabled,\nimport blocks). Optionally pair with rosa-classic-network-terraform adopt mode\nfor the VPC. Requires rosa login, RHCS_TOKEN for plan/apply, and AWS creds\nfor network discovery.\n\nNOT for: ROSA Classic clusters, greenfield HCP create (use rosa-classic-to-hcp-terraform),\nor importing IAM/OIDC resources created outside the module graph.\n",
           "description_html": "\u003cp\u003eUse when importing an existing ROSA HCP cluster into Terraform using the\u003cbr\u003esupported terraform-redhat/rosa-hcp/rhcs registry module (create_* disabled,\u003cbr\u003eimport blocks). Optionally pair with rosa-classic-network-terraform adopt mode\u003cbr\u003efor the VPC. Requires rosa login, RHCS_TOKEN for plan/apply, and AWS creds\u003cbr\u003efor network discovery.\u003c/p\u003e\u003cp\u003eNOT for: ROSA Classic clusters, greenfield HCP create (use rosa-classic-to-hcp-terraform),\u003cbr\u003eor importing IAM/OIDC resources created outside the module graph.\u003c/p\u003e",
+          "meta": "License: Apache-2.0"
+        },
+        {
+          "name": "rosa-purge-cluster-resources",
+          "description": "Use when a ROSA cluster's associated AWS resources need full teardown — VPC,\nNAT gateways, EFS, S3 buckets, IAM roles, Secrets Manager, VPC endpoints,\nand more — especially after Terraform state is lost or a cluster was deleted\nwithout cleaning up infrastructure. Works whether the cluster is still live,\nmid-uninstall, or already gone. Discovers resources by naming convention and\nAWS tags, not by IaC state.\n\nNOT for: simple cluster deletion (use /rosa:delete-cluster). NOT for: clusters\nwhose IaC state is intact (use the IaC tool's destroy workflow instead).\n",
+          "description_html": "\u003cp\u003eUse when a ROSA cluster&#x27;s associated AWS resources need full teardown — VPC,\u003cbr\u003eNAT gateways, EFS, S3 buckets, IAM roles, Secrets Manager, VPC endpoints,\u003cbr\u003eand more — especially after Terraform state is lost or a cluster was deleted\u003cbr\u003ewithout cleaning up infrastructure. Works whether the cluster is still live,\u003cbr\u003emid-uninstall, or already gone. Discovers resources by naming convention and\u003cbr\u003eAWS tags, not by IaC state.\u003c/p\u003e\u003cp\u003eNOT for: simple cluster deletion (use /rosa:delete-cluster). NOT for: clusters\u003cbr\u003ewhose IaC state is intact (use the IaC tool&#x27;s destroy workflow instead).\u003c/p\u003e",
           "meta": "License: Apache-2.0"
         }
       ],

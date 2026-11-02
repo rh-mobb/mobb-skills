@@ -12,7 +12,8 @@
         "aro-cost",
         "rosa-classic-to-hcp-terraform",
         "rosa-classic-network-terraform",
-        "rosa-hcp-adopt-terraform"
+        "rosa-hcp-adopt-terraform",
+        "rosa-purge-cluster-resources"
       ]
     },
     {
