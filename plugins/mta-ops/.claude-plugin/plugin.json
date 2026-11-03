@@ -1,0 +1,8 @@
+{
+  "name": "mta-ops",
+  "description": "Migration Toolkit for Applications Ops CLI (mta-ops) namespace migration and PVC transfer",
+  "version": "0.1.0",
+  "author": {
+    "name": "github.com/rh-mobb"
+  }
+}

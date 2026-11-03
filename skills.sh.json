@@ -4,8 +4,9 @@
   "groupings": [
     {
       "title": "OpenShift",
-      "description": "Skills for managing OpenShift clusters via OCM, ROSA, and ARO",
+      "description": "Skills for managing OpenShift clusters via OCM, ROSA, and ARO, and for namespace migration with mta-ops",
       "skills": [
+        "mta-ops",
         "ocm-cli",
         "rosa-cli",
         "rosa-cost",
