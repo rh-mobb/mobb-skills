@@ -15,8 +15,8 @@
     {
       "name": "mta-ops",
       "source": "./plugins/mta-ops",
-      "description": "Migration Toolkit for Applications Ops CLI (mta-ops) namespace migration and PVC transfer.",
-      "version": "0.1.0",
+      "description": "Migration Toolkit for Applications Ops CLI (mta-ops) namespace migration, PVC transfer, and GitOps packaging.",
+      "version": "0.2.0",
       "category": "openshift",
       "keywords": ["mta", "mta-ops", "crane", "migration", "openshift", "pvc"]
     },

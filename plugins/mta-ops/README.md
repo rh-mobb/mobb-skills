@@ -24,7 +24,9 @@ A kubeconfig with a context for the source cluster and a context for the target 
 | `/mta-ops:stage` | Export, transform, render, and validate one namespace. Writes nothing to the target. |
 | `/mta-ops:migrate` | Stage the namespace, apply it to the target, copy every PVC, and scale workloads back up. |
 | `/mta-ops:transfer-pvc` | Copy one PVC's data from a source context to a destination context. |
+| `/mta-ops:gitops` | Write the rendered app into a new or existing Git repository as Kustomize, plus an Application or ApplicationSet. |
 
 ## Skills
 
 - **mta-ops** — Command reference for the installed Ops CLI, including bundled transform plugins and the `plugins/` working-directory trap.
+- **mta-ops-gitops** — Package rendered manifests into a Git repository and add an Argo CD Application or ApplicationSet.

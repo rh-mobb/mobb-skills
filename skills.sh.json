@@ -7,6 +7,7 @@
       "description": "Skills for managing OpenShift clusters via OCM, ROSA, and ARO, and for namespace migration with mta-ops",
       "skills": [
         "mta-ops",
+        "mta-ops-gitops",
         "ocm-cli",
         "rosa-cli",
         "rosa-cost",

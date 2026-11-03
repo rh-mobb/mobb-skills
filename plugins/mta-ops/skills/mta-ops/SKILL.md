@@ -263,6 +263,10 @@ mta-ops validate --api-resources api-surface.json --input-dir output
 
 A failed GVK means the target is missing that CRD or operator, or the manifest still uses an API version the target removed. Fix the target or add a transform stage. Do not `oc apply` over a failing report unless the user accepts the specific failures.
 
+## GitOps
+
+To put the rendered manifests in a Git repository and add an Argo CD Application or ApplicationSet, use the `mta-ops-gitops` skill (`/mta-ops:gitops`). That skill writes files in git. It does not apply them to a cluster.
+
 ## Deploy and copy
 
 `/mta-ops:stage` ends at validate. `/mta-ops:migrate` then:
